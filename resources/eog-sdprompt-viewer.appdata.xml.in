@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2023 Martin Rizzo <martinrizzo@gmail.com> -->
+<component type="addon">
+  <id>eog-sdprompt-viewer</id>
+  <extends>eog.desktop</extends>
+  <name>Stable Diffusion Prompt Viewer</name>
+  <summary>Plugin for Eye of GNOME that displays text prompts embedded in Stable Diffusion-generated images.</summary>
+  <url type="homepage">https://github.com/martin-rizzo/SDPromptViewer</url>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <updatecontact>martinrizzo@gmail.com</updatecontact>
+</component>

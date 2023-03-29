@@ -1,0 +1,9 @@
+[Plugin]
+Module=sdprompt-viewer
+IAge=3
+Name=Stable Diffusion Prompt Viewer
+Icon=applications-science
+Description=Displays text prompts that are embedded within Stable Diffusion images.
+Authors=Martin Rizzo
+Copyright=Copyright © 2023 Martin Rizzo
+Website=https://github.com/martin-rizzo/SDPromptDisplay
