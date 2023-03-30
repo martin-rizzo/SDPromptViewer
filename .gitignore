@@ -1,5 +1,8 @@
 /build
 
+# Hidden Directories #
+/.*/
+
 # Glade Backups #
 *.ui~
 *.ui#
