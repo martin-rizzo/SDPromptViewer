@@ -179,15 +179,96 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
     }
 }
 
+
+/*---------------------------- USER INTERFACE -----------------------------*/
+
+static void
+hide_all_widgets( SDPromptViewerPlugin *plugin )
+{
+    static const gchar *containers[] = {
+        "message_label",
+        "loading_spinner",
+        "prompt_frame",
+        "negative_frame",
+        NULL
+    };
+    int i;
+    GtkWidget *widget;
+    GtkBuilder *builder = plugin->sidebar_builder;
+    
+    for( i=0 ; containers[i] ; ++i ) {
+        widget = get_widget(builder, containers[i]);
+        if( widget ) { gtk_widget_set_visible( widget, FALSE ); }
+    } 
+}
+
+static void
+show_spinner( SDPromptViewerPlugin *plugin )
+{
+    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkWidget *spinner = get_widget(builder, "loading_spinner");
+    hide_all_widgets( plugin );
+    gtk_widget_set_visible( spinner, TRUE );
+}
+
+static void
+show_message( SDPromptViewerPlugin *plugin, const gchar *message )
+{
+    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkWidget *label = get_widget(builder, "message_label");
+    hide_all_widgets( plugin );
+    gtk_widget_set_visible( label, TRUE );
+    gtk_label_set_label( GTK_LABEL(label), message);
+}
+
+static void
+show_prompt_value( SDPromptViewerPlugin *plugin,
+                   const gchar *key,
+                   const gchar *value)
+{
+    GtkBuilder *builder = plugin->sidebar_builder;
+    const gchar* widget_name;
+    const gchar* widget_group_name;
+    gchar *utf8_text;
+    GtkWidget *widget, *widget_group;
+    GtkEntryBuffer *entry_buffer;
+    GtkTextBuffer  *text_buffer;
+    
+    
+    widget_name       = "prompt_text_view";
+    widget_group_name = "prompt_frame";
+    
+    /* .... */
+    
+    widget       = get_widget( builder, widget_name );
+    widget_group = get_widget( builder, widget_group_name );
+    
+    if( widget && widget_group )
+    {
+        utf8_text = ensure_valid_utf8( value, -1 );
+        gtk_widget_set_visible( widget,       TRUE );
+        gtk_widget_set_visible( widget_group, TRUE );
+        if( GTK_IS_ENTRY(widget) ) {
+            entry_buffer = gtk_entry_get_buffer( GTK_ENTRY(widget) );
+            gtk_entry_buffer_set_text( entry_buffer, utf8_text, -1 );
+        }
+        else if( GTK_IS_TEXT_VIEW(widget) ) {
+            text_buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
+            gtk_text_buffer_set_text( text_buffer, utf8_text, -1 );
+        }
+        g_free( utf8_text );
+    }
+
+}
+
 /*-------------------------------- EVENTS ---------------------------------*/
 
 static void
 on_png_text_chunk_loaded(gchar *text, gpointer data_ptr, int data_int) {
     
-    SDPromptViewerPlugin *plugin  = SDPROMPT_VIEWER_PLUGIN( data_ptr );
-    GtkBuilder            *builder = plugin->sidebar_builder;
-    set_text_view( builder, "negative_text_view", text, -1 );
-    set_entry( builder, "sampler_entry", "Hola4", -1 );
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( data_ptr );
+    hide_all_widgets( plugin );
+    show_prompt_value( plugin, "key", text );
 }
 
 /*
@@ -205,12 +286,14 @@ on_selection_changed(EogThumbView *view, SDPromptViewerPlugin *plugin) {
     image = eog_thumb_view_get_first_selected_image( view );
     file  = image ? eog_image_get_file( image ) : NULL;
     if( file ) {
+        show_spinner( plugin );
         load_png_text_chunk(file, "parameters", 
                             on_png_text_chunk_loaded, plugin, 0);
     }
     if( image ) { g_object_unref(image); }
     if( file  ) { g_object_unref(file ); }
 }
+
 
 /*---------------------------- USER INTERFACE -----------------------------*/
 

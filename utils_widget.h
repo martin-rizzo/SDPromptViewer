@@ -29,6 +29,7 @@
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
      
 */
+#include <gtk/gtk.h>
 
 /**
  * ensure_valid_utf8 - Converts a string to valid UTF-8 format.
