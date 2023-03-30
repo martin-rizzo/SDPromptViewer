@@ -34,6 +34,7 @@
    
  */
 #include <glib.h>
+#include <gio/gio.h>
 
 typedef void (*PNGTextChunkCallback)(gchar   *text,
                                      gpointer data_ptr,

@@ -44,6 +44,7 @@
 #include "resources.h"
 #include "utils_png.h"
 #include "utils_jpgtx.h"
+#include "utils_parser.h"
 #include "utils_widget.h"
 #include "sdprompt-viewer-plugin.h"
 #include "sdprompt-viewer-preferences.h"
@@ -222,7 +223,7 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
 }
 
 static void
-show_prompt_value( SDPromptViewerPlugin *plugin,
+show_sd_parameter( SDPromptViewerPlugin *plugin,
                    const gchar *key,
                    const gchar *value)
 {
@@ -234,10 +235,17 @@ show_prompt_value( SDPromptViewerPlugin *plugin,
     GtkEntryBuffer *entry_buffer;
     GtkTextBuffer  *text_buffer;
     
+    eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );
+    eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );
     
-    widget_name       = "prompt_text_view";
-    widget_group_name = "prompt_frame";
-    
+    if( strcmp(key,"Prompt")==0 ) {
+        widget_name       = "prompt_text_view";
+        widget_group_name = "prompt_frame";
+    }
+    else if( strcmp(key,"Negative prompt")==0 ) {
+        widget_name       = "negative_text_view";
+        widget_group_name = "negative_frame";
+    }
     /* .... */
     
     widget       = get_widget( builder, widget_name );
@@ -264,11 +272,30 @@ show_prompt_value( SDPromptViewerPlugin *plugin,
 /*-------------------------------- EVENTS ---------------------------------*/
 
 static void
-on_png_text_chunk_loaded(gchar *text, gpointer data_ptr, int data_int) {
+on_parse_sd_parameter(const char *key,
+                      int         key_size,
+                      const char *value,
+                      int         value_size,
+                      void       *user_ptr,
+                      int         user_int)
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
+    gchar *k = g_strndup(key, key_size);
+    gchar *v = g_strndup(value, value_size); 
+    show_sd_parameter( plugin, k, v );
+    g_free(k);
+    g_free(v);
+}
+
+static void
+on_png_text_chunk_loaded(gchar *text, gpointer user_ptr, int user_int) {
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
     
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( data_ptr );
-    hide_all_widgets( plugin );
-    show_prompt_value( plugin, "key", text );
+    if( text && text[0] ) {
+        hide_all_widgets( plugin );
+        parse_sd_parameters( text, -1,
+                             on_parse_sd_parameter, user_ptr, user_int );
+    }
 }
 
 /*
