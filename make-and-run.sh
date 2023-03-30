@@ -12,9 +12,9 @@ status=$?
 
 if [ $status -eq 0 ]; then
   if [ -e "$test_images_path" ]; then
-    eog   "$test_images_path" & disown
+    EOG_DEBUG_PLUGINS='true'  eog "$test_images_path" & disown
   else
-    eog &disown
+    EOG_DEBUG_PLUGINS='true'  eog &disown
   fi
 fi
 
