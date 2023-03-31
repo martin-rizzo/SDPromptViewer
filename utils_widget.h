@@ -73,7 +73,10 @@ static void
 set_widget_text(GtkWidget *widget, const char *text, int max_bytes) {
     GtkTextBuffer *buffer;
     gchar *utf8_text = ensure_valid_utf8( text, max_bytes );
-    if( GTK_IS_ENTRY(widget) ) {
+    if( GTK_IS_LABEL(widget) ) {
+        gtk_label_set_text( GTK_LABEL(widget), utf8_text );
+    }
+    else if( GTK_IS_ENTRY(widget) ) {
         gtk_entry_set_text( GTK_ENTRY(widget), utf8_text );
     }
     else if( GTK_IS_TEXT_VIEW(widget) ) {
@@ -90,7 +93,10 @@ set_widget_text(GtkWidget *widget, const char *text, int max_bytes) {
 static void
 clear_widget_text(GtkWidget *widget) {
     GtkTextBuffer *buffer;
-    if( GTK_IS_ENTRY(widget) ) {
+    if( GTK_IS_LABEL(widget) ) {
+        gtk_label_set_text( GTK_LABEL(widget), "");
+    }
+    else if( GTK_IS_ENTRY(widget) ) {
         gtk_entry_set_text( GTK_ENTRY(widget), "" );
     }
     else if( GTK_IS_TEXT_VIEW(widget) ) {
@@ -137,36 +143,13 @@ hide_group_descendants(GtkWidget *widget) {
                 child_id = gtk_buildable_get_name( buildable );
                 if( g_str_has_suffix( child_id, "_group") ) {
                     gtk_widget_hide( child );
-                } else {
-                    hide_group_descendants( child );
                 }
-            }
-        }
-        g_list_free( children );
-    }
-}
-
-/*
-static void
-hide_group_descendants(GtkBuilder *builder, GtkWidget *widget) {
-    if( GTK_IS_CONTAINER(widget) ) {
-        GList* children = gtk_container_get_children( GTK_CONTAINER(widget) );
-        for( GList* iter = children ; iter ; iter = g_list_next(iter) ) {
-            GtkWidget* child = GTK_WIDGET( iter->data );
-            const gchar* child_name = gtk_widget_get_name( child );
-            
-            eog_debug_message( DEBUG_PLUGINS, "#CHILD_NAME = %s\n", child_name);
-
-            if (g_str_has_suffix( child_name, "_group") ) {
-                gtk_widget_hide( child );
-            } else {
                 hide_group_descendants( child );
             }
         }
         g_list_free( children );
     }
 }
-*/
 
 /**
  * get_widget - Retrieves a widget with the specified name.

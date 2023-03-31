@@ -243,6 +243,49 @@ show_size( SDPromptViewerPlugin *plugin, const gchar *text, int text_size )
     }
 }
 
+static void
+show_unknown( SDPromptViewerPlugin *plugin,
+             const gchar *key_name,
+             const gchar *text, int text_size)
+{
+    const gchar *widget_names[] = {
+        "unknown1_group", "unknown1_label", "unknown1_entry", 
+        "unknown2_group", "unknown2_label", "unknown2_entry", 
+        "unknown3_group", "unknown3_label", "unknown3_entry", 
+        "unknown4_group", "unknown4_label", "unknown4_entry", 
+        NULL
+    };
+    int i;
+    GtkWidget *widget, *group_widget, *label_widget, *entry_widget;
+    GtkBuilder *builder = plugin->sidebar_builder;
+    if( text_size<0 ) { text_size = strlen(text); }
+
+    eog_debug_message( DEBUG_PLUGINS, "#SHOW UNKNOWN = %s\n", key_name);
+
+    /* search for a free group of widgets */
+    group_widget = NULL;
+    for( i=0; !group_widget && widget_names[i]!=NULL; i+=3 ) {
+        widget = get_widget( builder, widget_names[i] );
+        if( widget && !gtk_widget_get_visible( widget ) ) {
+            eog_debug_message( DEBUG_PLUGINS, "#FREE GROUP = %s\n", widget_names[i]);
+            group_widget = widget;
+            label_widget = get_widget( builder, widget_names[i+1] );
+            entry_widget = get_widget( builder, widget_names[i+2] );
+        }
+    }
+    /* if not free group then return */
+    if( !group_widget || !label_widget || !entry_widget ) {
+        return;
+    }
+    /* set label & entry widgets */
+    set_widget_text( label_widget, key_name,    -1     );
+    set_widget_text( entry_widget, text    , text_size );
+    gtk_widget_set_visible( group_widget, TRUE );
+    /* make main group visible */
+    widget = get_widget( builder, "main_unknown_group" );
+    if( widget ) { gtk_widget_set_visible( widget, TRUE ); }    
+}
+
 
 static void
 show_sd_parameter( SDPromptViewerPlugin *plugin,
@@ -253,11 +296,10 @@ show_sd_parameter( SDPromptViewerPlugin *plugin,
     GtkBuilder *builder = plugin->sidebar_builder;
     const gchar *widget_id = NULL;
     GtkWidget   *widget    = NULL;
-
-    /*    
+/*
     eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );
     eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );
-    */
+*/    
          IF_EQUAL(key,"Prompt"         ) { widget_id = "prompt_text_view";   }
     else IF_EQUAL(key,"Negative prompt") { widget_id = "negative_text_view"; }
     else IF_EQUAL(key,"Steps"          ) { widget_id = "steps_entry";        }
@@ -266,7 +308,8 @@ show_sd_parameter( SDPromptViewerPlugin *plugin,
     else IF_EQUAL(key,"Seed"           ) { widget_id = "seed_entry";         }
     else IF_EQUAL(key,"Model hash"     ) { widget_id = "model_hash_entry";   }
     else IF_EQUAL(key,"Model"          ) { widget_id = "model_entry";        }
-    else IF_EQUAL(key,"Size") { show_size(plugin,value,-1); }
+    else IF_EQUAL(key,"Size"           ) { show_size(plugin,value,-1);       }
+    else                                { show_unknown(plugin,key,value,-1); }
     /* .... */
     
     if( widget_id ) {
