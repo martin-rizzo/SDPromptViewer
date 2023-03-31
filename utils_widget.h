@@ -100,6 +100,75 @@ clear_widget_text(GtkWidget *widget) {
 }
 
 /**
+ * show_group_ancestor - Make visible the ancestor whose ID ends with "_group".
+ * @widget: The starting widget to search from.
+ */
+static void
+show_group_ancestor(GtkWidget *widget) {
+    GtkBuildable *buildable; GtkWidget *parent; const gchar *parent_id;
+    parent = widget;
+    while( parent ) {
+        buildable = GTK_BUILDABLE( parent );
+        if( buildable ) {
+            parent_id = gtk_buildable_get_name( buildable );
+            if( g_str_has_suffix(parent_id, "_group") ) {
+                gtk_widget_show( parent );
+                return;
+            }
+        }
+        parent = gtk_widget_get_parent( parent );
+    }
+}
+
+/**
+ * hide_group_descendants - Hide all descendant whose ID ends with "_group".
+ * @widget: the widget to start searching from.
+ */
+static void
+hide_group_descendants(GtkWidget *widget) {
+    GList *children, *iter;
+    GtkBuildable *buildable; GtkWidget *child; const gchar *child_id;
+    if( GTK_IS_CONTAINER(widget) ) {
+        children = gtk_container_get_children( GTK_CONTAINER(widget) );
+        for( iter = children ; iter ; iter = g_list_next(iter) ) {
+            child     = GTK_WIDGET( iter->data );
+            buildable = GTK_BUILDABLE( child );
+            if( buildable ) {
+                child_id = gtk_buildable_get_name( buildable );
+                if( g_str_has_suffix( child_id, "_group") ) {
+                    gtk_widget_hide( child );
+                } else {
+                    hide_group_descendants( child );
+                }
+            }
+        }
+        g_list_free( children );
+    }
+}
+
+/*
+static void
+hide_group_descendants(GtkBuilder *builder, GtkWidget *widget) {
+    if( GTK_IS_CONTAINER(widget) ) {
+        GList* children = gtk_container_get_children( GTK_CONTAINER(widget) );
+        for( GList* iter = children ; iter ; iter = g_list_next(iter) ) {
+            GtkWidget* child = GTK_WIDGET( iter->data );
+            const gchar* child_name = gtk_widget_get_name( child );
+            
+            eog_debug_message( DEBUG_PLUGINS, "#CHILD_NAME = %s\n", child_name);
+
+            if (g_str_has_suffix( child_name, "_group") ) {
+                gtk_widget_hide( child );
+            } else {
+                hide_group_descendants( child );
+            }
+        }
+        g_list_free( children );
+    }
+}
+*/
+
+/**
  * get_widget - Retrieves a widget with the specified name.
  * @builder:     a GtkBuilder object
  * @widget_name: the name of the widget to retrieve from the builder

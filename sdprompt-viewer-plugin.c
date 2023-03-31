@@ -186,21 +186,21 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
 static void
 hide_all_widgets( SDPromptViewerPlugin *plugin )
 {
-    static const gchar *containers[] = {
+    static const gchar *widgets_to_hide[] = {
         "message_label",
         "loading_spinner",
-        "prompt_frame",
-        "negative_frame",
         NULL
     };
     int i;
-    GtkWidget *widget;
-    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkBuilder *builder        = plugin->sidebar_builder;
+    GtkWidget  *main_container = get_widget( builder, "main_container" );
+    GtkWidget  *widget;
     
-    for( i=0 ; containers[i] ; ++i ) {
-        widget = get_widget(builder, containers[i]);
+    hide_group_descendants( main_container );
+    for( i=0 ; widgets_to_hide[i] ; ++i ) {
+        widget = get_widget(builder, widgets_to_hide[i]);
         if( widget ) { gtk_widget_set_visible( widget, FALSE ); }
-    } 
+    }
 }
 
 static void
@@ -223,50 +223,61 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
 }
 
 static void
+show_size( SDPromptViewerPlugin *plugin, const gchar *text, int text_size )
+{
+    const gchar *ptr; int size;
+    GtkWidget *width_widget, *height_widget;
+    GtkBuilder *builder = plugin->sidebar_builder;
+    if( text_size<0 ) { text_size = strlen(text); }
+    
+
+    width_widget  = get_widget( builder, "width_entry" );
+    height_widget = get_widget( builder, "height_entry" );
+    if( width_widget && height_widget ) {
+        ptr = text; size = text_size;
+        while( size>0 && '0'<=*ptr && *ptr<='9' ) { --size; ++ptr; }
+        set_widget_text( width_widget, text, (ptr-text) );
+        if( size>0) { --size; ++ptr; }
+        set_widget_text( height_widget, ptr, size );
+        show_group_ancestor( height_widget );
+    }
+}
+
+
+static void
 show_sd_parameter( SDPromptViewerPlugin *plugin,
                    const gchar *key,
                    const gchar *value)
 {
+#   define IF_EQUAL(key,key_name) if(0==strcmp(key,key_name))
     GtkBuilder *builder = plugin->sidebar_builder;
-    const gchar* widget_name;
-    const gchar* widget_group_name;
-    gchar *utf8_text;
-    GtkWidget *widget, *widget_group;
-    GtkEntryBuffer *entry_buffer;
-    GtkTextBuffer  *text_buffer;
-    
+    const gchar *widget_id = NULL;
+    GtkWidget   *widget    = NULL;
+
+    /*    
     eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );
     eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );
-    
-    if( strcmp(key,"Prompt")==0 ) {
-        widget_name       = "prompt_text_view";
-        widget_group_name = "prompt_frame";
-    }
-    else if( strcmp(key,"Negative prompt")==0 ) {
-        widget_name       = "negative_text_view";
-        widget_group_name = "negative_frame";
-    }
+    */
+         IF_EQUAL(key,"Prompt"         ) { widget_id = "prompt_text_view";   }
+    else IF_EQUAL(key,"Negative prompt") { widget_id = "negative_text_view"; }
+    else IF_EQUAL(key,"Steps"          ) { widget_id = "steps_entry";        }
+    else IF_EQUAL(key,"Sampler"        ) { widget_id = "sampler_entry";      }
+    else IF_EQUAL(key,"CFG scale"      ) { widget_id = "cfg_scale_entry";    }
+    else IF_EQUAL(key,"Seed"           ) { widget_id = "seed_entry";         }
+    else IF_EQUAL(key,"Model hash"     ) { widget_id = "model_hash_entry";   }
+    else IF_EQUAL(key,"Model"          ) { widget_id = "model_entry";        }
+    else IF_EQUAL(key,"Size") { show_size(plugin,value,-1); }
     /* .... */
     
-    widget       = get_widget( builder, widget_name );
-    widget_group = get_widget( builder, widget_group_name );
-    
-    if( widget && widget_group )
-    {
-        utf8_text = ensure_valid_utf8( value, -1 );
-        gtk_widget_set_visible( widget,       TRUE );
-        gtk_widget_set_visible( widget_group, TRUE );
-        if( GTK_IS_ENTRY(widget) ) {
-            entry_buffer = gtk_entry_get_buffer( GTK_ENTRY(widget) );
-            gtk_entry_buffer_set_text( entry_buffer, utf8_text, -1 );
-        }
-        else if( GTK_IS_TEXT_VIEW(widget) ) {
-            text_buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
-            gtk_text_buffer_set_text( text_buffer, utf8_text, -1 );
-        }
-        g_free( utf8_text );
+    if( widget_id ) {
+        widget = get_widget( builder, widget_id );
     }
-
+    if( widget )
+    {
+        set_widget_text( widget, value, -1 );
+        show_group_ancestor( widget );
+    }
+#   undef IF_EQUAL
 }
 
 /*-------------------------------- EVENTS ---------------------------------*/
