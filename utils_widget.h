@@ -159,5 +159,5 @@ hide_group_descendants(GtkWidget *widget) {
  * Returns: a GtkWidget pointer to the requested widget.
  **/
 #define get_widget(builder, widget_name) \
-    GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) );
+    GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) )
 

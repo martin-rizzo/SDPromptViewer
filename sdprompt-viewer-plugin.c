@@ -129,7 +129,7 @@ static void
 sdprompt_viewer_plugin_dispose( GObject *object )
 {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
-    eog_debug_message( DEBUG_PLUGINS, "EogPostrPlugin disposing" );
+    eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPlugin" );
     
     g_clear_object( &plugin->window );
 
@@ -201,6 +201,9 @@ hide_all_widgets( SDPromptViewerPlugin *plugin )
         widget = get_widget(builder, widgets_to_hide[i]);
         if( widget ) { gtk_widget_set_visible( widget, FALSE ); }
     }
+    /* remove text from all widgets (GtkEntry & GtkTextView) */
+    widget = get_widget(builder, "unknown_text_view");
+    if( widget ) { clear_widget_text(widget); }
 }
 
 static void
@@ -248,42 +251,21 @@ show_unknown( SDPromptViewerPlugin *plugin,
              const gchar *key_name,
              const gchar *text, int text_size)
 {
-    const gchar *widget_names[] = {
-        "unknown1_group", "unknown1_label", "unknown1_entry", 
-        "unknown2_group", "unknown2_label", "unknown2_entry", 
-        "unknown3_group", "unknown3_label", "unknown3_entry", 
-        "unknown4_group", "unknown4_label", "unknown4_entry", 
-        NULL
-    };
-    int i;
-    GtkWidget *widget, *group_widget, *label_widget, *entry_widget;
+    GtkWidget *group_widget;
+    GtkTextView *text_view; GtkTextBuffer *buffer;
     GtkBuilder *builder = plugin->sidebar_builder;
     if( text_size<0 ) { text_size = strlen(text); }
 
-    eog_debug_message( DEBUG_PLUGINS, "#SHOW UNKNOWN = %s\n", key_name);
-
-    /* search for a free group of widgets */
-    group_widget = NULL;
-    for( i=0; !group_widget && widget_names[i]!=NULL; i+=3 ) {
-        widget = get_widget( builder, widget_names[i] );
-        if( widget && !gtk_widget_get_visible( widget ) ) {
-            eog_debug_message( DEBUG_PLUGINS, "#FREE GROUP = %s\n", widget_names[i]);
-            group_widget = widget;
-            label_widget = get_widget( builder, widget_names[i+1] );
-            entry_widget = get_widget( builder, widget_names[i+2] );
-        }
+    text_view = GTK_TEXT_VIEW( get_widget( builder, "unknown_text_view" ) );
+    buffer    = text_view ? gtk_text_view_get_buffer( text_view ) : NULL;
+    if( buffer ) {
+        gtk_text_buffer_insert_at_cursor( buffer, key_name, -1 );
+        gtk_text_buffer_insert_at_cursor( buffer, ": "    , -1 );
+        gtk_text_buffer_insert_at_cursor( buffer, text , text_size );
+        gtk_text_buffer_insert_at_cursor( buffer, "\n"    , -1 );
+        group_widget = get_widget( builder, "unknown_group" );
+        if( group_widget ) { gtk_widget_set_visible( group_widget, TRUE ); }
     }
-    /* if not free group then return */
-    if( !group_widget || !label_widget || !entry_widget ) {
-        return;
-    }
-    /* set label & entry widgets */
-    set_widget_text( label_widget, key_name,    -1     );
-    set_widget_text( entry_widget, text    , text_size );
-    gtk_widget_set_visible( group_widget, TRUE );
-    /* make main group visible */
-    widget = get_widget( builder, "main_unknown_group" );
-    if( widget ) { gtk_widget_set_visible( widget, TRUE ); }    
 }
 
 
@@ -296,10 +278,10 @@ show_sd_parameter( SDPromptViewerPlugin *plugin,
     GtkBuilder *builder = plugin->sidebar_builder;
     const gchar *widget_id = NULL;
     GtkWidget   *widget    = NULL;
-/*
-    eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );
-    eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );
-*/    
+
+/*  eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );  */
+/*  eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );  */
+  
          IF_EQUAL(key,"Prompt"         ) { widget_id = "prompt_text_view";   }
     else IF_EQUAL(key,"Negative prompt") { widget_id = "negative_text_view"; }
     else IF_EQUAL(key,"Steps"          ) { widget_id = "steps_entry";        }
@@ -346,6 +328,7 @@ on_png_text_chunk_loaded(gchar *text, gpointer user_ptr, int user_int) {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
     
     if( text && text[0] ) {
+        eog_debug_message( DEBUG_PLUGINS, "#PROMPT:\n\"%s\"", text);
         hide_all_widgets( plugin );
         parse_sd_parameters( text, -1,
                              on_parse_sd_parameter, user_ptr, user_int );
