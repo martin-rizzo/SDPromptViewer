@@ -64,6 +64,7 @@ if get_option('buildtype').contains('debug')
     '-Werror=pointer-arith',
     '-Werror=return-type',
     '-Wnested-externs',
+    '-Wno-unused-function',
     '-Wstrict-prototypes',
   ])
 endif
