@@ -33,8 +33,8 @@
 
 /**
  * ensure_valid_utf8 - Converts a string to valid UTF-8 format.
- * @text:    a string of possibly invalid utf8 text
- * @max_len: max bytes to convert, or -1 to go until NUL.
+ * @text:      a string of possibly invalid utf8 text.
+ * @max_bytes: the max bytes to convert, or -1 to go until NUL.
  *
  * This function verifies whether the string is a valid UTF8 string.
  * If it is not valid, it attempts to convert the string to UTF8 using
@@ -44,80 +44,68 @@
  * being processed or displayed in a GTK-based application.
  *
  * Returns: a pointer to the string in valid UTF-8 format.
+ *    The caller of the function takes ownership of the data,
+ *    and is responsible for freeing it.
  */
 static gchar *
-ensure_valid_utf8( const char *text, int len )
-{
+ensure_valid_utf8( const char *text, int max_bytes ) {
     gchar *utf8_text = NULL;
-    if( !g_utf8_validate(text, len, NULL) ) {
-        utf8_text = g_convert(text,len,"UTF-8","ISO-8859-1",NULL,NULL,NULL);
+    if( !g_utf8_validate(text, max_bytes, NULL) ) {
+        utf8_text = g_convert( text, max_bytes, "UTF-8", "ISO-8859-1",
+                               NULL,NULL,NULL );
     }
-    return
-        utf8_text ? utf8_text :
-        len>=0    ? g_strndup(text,len) : g_strdup(text);
-}
-
-static GtkWidget *
-get_widget(GtkBuilder *builder, const gchar *widget_name)
-{
-    return GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) );
+    return utf8_text    ? utf8_text :
+           max_bytes>=0 ? g_strndup( text, max_bytes ) : g_strdup( text );
 }
 
 /**
- * set_entry - Sets the text of a GtkEntry widget.
- * @builder:     a GtkBuilder instance
- * @widget_name: the name of the GtkEntry widget to be set
- * @text:        the text to be set in the GtkEntry widget
- * @len: the length of the text, or -1 if the text is NUL-terminated
+ * set_widget_text - Sets the text of a widget.
+ * @widget:    The widget to set the text of.
+ * @text:      A str of possibly invalid utf8 text to set as the widget's text.
+ * @max_bytes: The maximum number of bytes in @text, or -1 to go until NUL.
  *
- * Sets the text of a GtkEntry widget with the given name in the specified
- * GtkBuilder instance. If @len is -1, the text is assumed to be
- * NUL-terminated. The text is expected to be in valid UTF-8 format.
- */ 
+ * This function sets the text of the specified widget to the provided @text.
+ * If @max_bytes is -1, the text is assumed to be NUL-terminated. If the
+ * provided text contains invalid UTF-8 sequences, it will be automatically
+ * converted to a valid UTF-8 string using the most appropriate method.
+ */
 static void
-set_entry(GtkBuilder  *builder,
-          const gchar *widget_name,
-          const gchar *text,
-          int          len)
-{
-    GtkEntry *entry; GtkEntryBuffer *buffer;
-    gchar *utf8_text = ensure_valid_utf8( text, len );
-
-    entry = GTK_ENTRY( get_widget( builder, widget_name ) );
-    if (entry) {
-        buffer = gtk_entry_get_buffer( entry );
-        gtk_entry_buffer_set_text( buffer, utf8_text, -1 );
+set_widget_text(GtkWidget *widget, const char *text, int max_bytes) {
+    GtkTextBuffer *buffer;
+    gchar *utf8_text = ensure_valid_utf8( text, max_bytes );
+    if( GTK_IS_ENTRY(widget) ) {
+        gtk_entry_set_text( GTK_ENTRY(widget), utf8_text );
     }
-    g_free(utf8_text);
-}
-
-/**
- * set_text_view - Sets the text of a GtkTextView widget.
- * @gtk_builder:     a GtkBuilder instance
- * @gtk_widget_name: the name of the GtkTextView widget to be set
- * @text:            the text to be set in the GtkTextView widget
- * @len: the length of the text, or -1 if the text is NUL-terminated
- *
- * Sets the text of a GtkTextView widget with the given name in the specified
- * GtkBuilder instance. If @len is -1, the text is assumed to be
- * NUL-terminated. The text is expected to be in valid UTF-8 format.
- */ 
-static void
-set_text_view(GtkBuilder  *gtk_builder,
-              const gchar *gtk_widget_name,
-              const gchar *text,
-              int          len)
-{    
-    GtkTextView *text_view; GtkTextBuffer *buffer;
-    gchar *utf8_text = ensure_valid_utf8( text, len );
-    
-    text_view = GTK_TEXT_VIEW(
-        gtk_builder_get_object( gtk_builder, gtk_widget_name )
-    );
-    if (text_view) {
-        buffer = gtk_text_view_get_buffer( text_view );
+    else if( GTK_IS_TEXT_VIEW(widget) ) {
+        buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
         gtk_text_buffer_set_text( buffer, utf8_text, -1 );
-    }
+    }    
     g_free(utf8_text);
 }
+
+/**
+ * clear_widget_text - Clears the text content of a widget.
+ * @widget: the #GtkWidget to clear the text content of.
+ */
+static void
+clear_widget_text(GtkWidget *widget) {
+    GtkTextBuffer *buffer;
+    if( GTK_IS_ENTRY(widget) ) {
+        gtk_entry_set_text( GTK_ENTRY(widget), "" );
+    }
+    else if( GTK_IS_TEXT_VIEW(widget) ) {
+        buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
+        gtk_text_buffer_set_text( buffer, "", -1 );
+    }
+}
+
+/**
+ * get_widget - Retrieves a widget with the specified name.
+ * @builder:     a GtkBuilder object
+ * @widget_name: the name of the widget to retrieve from the builder
+ *
+ * Returns: a GtkWidget pointer to the requested widget.
+ **/
+#define get_widget(builder, widget_name) \
+    GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) );
 
