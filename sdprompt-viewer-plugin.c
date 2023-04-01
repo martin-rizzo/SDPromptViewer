@@ -186,24 +186,10 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
 static void
 hide_all_widgets( SDPromptViewerPlugin *plugin )
 {
-    static const gchar *widgets_to_hide[] = {
-        "message_label",
-        "loading_spinner",
-        NULL
-    };
-    int i;
     GtkBuilder *builder        = plugin->sidebar_builder;
     GtkWidget  *main_container = get_widget( builder, "main_container" );
-    GtkWidget  *widget;
-    
     hide_group_descendants( main_container );
-    for( i=0 ; widgets_to_hide[i] ; ++i ) {
-        widget = get_widget(builder, widgets_to_hide[i]);
-        if( widget ) { gtk_widget_set_visible( widget, FALSE ); }
-    }
-    /* remove text from all widgets (GtkEntry & GtkTextView) */
-    widget = get_widget(builder, "unknown_text_view");
-    if( widget ) { clear_widget_text(widget); }
+    clear_descendants_text( main_container, FALSE );
 }
 
 static void
@@ -226,16 +212,19 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
 }
 
 static void
-show_size( SDPromptViewerPlugin *plugin, const gchar *text, int text_size )
+show_size( SDPromptViewerPlugin *plugin, gboolean hires,
+           const gchar *text, int text_size )
 {
     const gchar *ptr; int size;
+    const gchar *width_widget_name, *height_widget_name;
     GtkWidget *width_widget, *height_widget;
     GtkBuilder *builder = plugin->sidebar_builder;
     if( text_size<0 ) { text_size = strlen(text); }
     
-
-    width_widget  = get_widget( builder, "width_entry" );
-    height_widget = get_widget( builder, "height_entry" );
+    width_widget_name  = hires ? "hires_width_entry"  : "width_entry" ;
+    height_widget_name = hires ? "hires_height_entry" : "height_entry";
+    width_widget  = get_widget( builder, width_widget_name  );
+    height_widget = get_widget( builder, height_widget_name );
     if( width_widget && height_widget ) {
         ptr = text; size = text_size;
         while( size>0 && '0'<=*ptr && *ptr<='9' ) { --size; ++ptr; }
@@ -284,14 +273,24 @@ show_sd_parameter( SDPromptViewerPlugin *plugin,
   
          IF_EQUAL(key,"Prompt"         ) { widget_id = "prompt_text_view";   }
     else IF_EQUAL(key,"Negative prompt") { widget_id = "negative_text_view"; }
+    else IF_EQUAL(key,"Wildcard prompt") { widget_id = "wildcard_text_view"; }
     else IF_EQUAL(key,"Steps"          ) { widget_id = "steps_entry";        }
     else IF_EQUAL(key,"Sampler"        ) { widget_id = "sampler_entry";      }
     else IF_EQUAL(key,"CFG scale"      ) { widget_id = "cfg_scale_entry";    }
     else IF_EQUAL(key,"Seed"           ) { widget_id = "seed_entry";         }
     else IF_EQUAL(key,"Model hash"     ) { widget_id = "model_hash_entry";   }
     else IF_EQUAL(key,"Model"          ) { widget_id = "model_entry";        }
-    else IF_EQUAL(key,"Size"           ) { show_size(plugin,value,-1);       }
-    else                                { show_unknown(plugin,key,value,-1); }
+    else IF_EQUAL(key,"Hires upscaler" ) { widget_id = "hires_upscaler_entry"; }
+    else IF_EQUAL(key,"Hires steps"    ) { widget_id = "hires_steps_entry";  }
+    else IF_EQUAL(key,"Hires upscale"  ) { widget_id = "hires_upscale_entry"; }
+    else IF_EQUAL(key,"Denoising strength") { widget_id = "hires_denoising_entry"; }
+    else IF_EQUAL(key,"Mask blur"      ) { widget_id = "inpaint_mask_blur_entry"; }
+    else IF_EQUAL(key,"Eta"            ) { widget_id = "eta_entry";          }
+    else IF_EQUAL(key,"ENSD"           ) { widget_id = "ensd_entry";         }
+    else IF_EQUAL(key,"Clip skip"      ) { widget_id = "clip_skip_entry";    }
+    else IF_EQUAL(key,"Size"           ) { show_size(plugin,FALSE,value,-1); }
+    else IF_EQUAL(key,"Hires resize"   ) { show_size(plugin,TRUE ,value,-1); }
+    else                                 { show_unknown(plugin,key,value,-1); }
     /* .... */
     
     if( widget_id ) {

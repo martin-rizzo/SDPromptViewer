@@ -105,6 +105,34 @@ clear_widget_text(GtkWidget *widget) {
     }
 }
 
+static void
+clear_descendants_text(GtkWidget *widget, gboolean include_labels) {
+    GList *children, *iter; GtkWidget *child; GtkTextBuffer *buffer;
+    if( GTK_IS_CONTAINER(widget) ) {
+        children = gtk_container_get_children( GTK_CONTAINER(widget) );
+        for( iter = children ; iter ; iter = g_list_next(iter) ) {
+            child = GTK_WIDGET( iter->data );
+            if( GTK_IS_LABEL(child) ) {
+                if( include_labels ) {
+                    gtk_label_set_text( GTK_LABEL(child), "" );
+                }
+            }
+            else if( GTK_IS_ENTRY(child) ) {
+                gtk_entry_set_text( GTK_ENTRY(child), "" );
+            }
+            else if( GTK_IS_TEXT_VIEW(child) ) {
+                buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(child) );
+                if( buffer ) { gtk_text_buffer_set_text( buffer, "", -1 ); }
+            }
+            else {
+                clear_descendants_text( child, include_labels );
+            }
+        }
+        g_list_free( children );
+    }    
+}
+
+
 /**
  * show_group_ancestor - Make visible the ancestor whose ID ends with "_group".
  * @widget: The starting widget to search from.
@@ -150,6 +178,7 @@ hide_group_descendants(GtkWidget *widget) {
         g_list_free( children );
     }
 }
+
 
 /**
  * get_widget - Retrieves a widget with the specified name.
