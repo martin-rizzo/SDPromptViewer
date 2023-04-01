@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define IS_ALPHA_SPACE(x) parse_sd_params_is_alpha_space(x)
+#define IS_SPACE(x)       ((x)==' ' || (x)=='\t')
 
 static int
 parse_sd_params_is_alpha_space(int ch) {
@@ -62,20 +63,41 @@ parse_next_param(const char **out_param,
                  const char **inout_buffer,
                  int         *inout_buffer_size)
 {
-    const char *ptr, *param; int size, param_size;
-    ptr  = (*inout_buffer);
-    size = (*inout_buffer_size);
-
-    /* (alfanum + spaces) ':' (spaces)     (alfanum + spaces)      ',' */
-    /* (alfanum + spaces) ':' (spaces) '"' (anything) '"' (spaces) ',' */
-    
+/* This parser can handle parameters that come in one of three formats:
+ * 1. (alphanumeric + spaces) ':' (spaces) (      chars not ','       ) ','
+ * 2. (alphanumeric + spaces) ':' (spaces) '"' (any chars) '"' (spaces) ','
+ * 3. (alphanumeric + spaces) ':' (spaces) '{' (any chars) '}' (spaces) ','
+ */
+    const char *ptr, *param; char close_char; int size, param_size=0;
+    ptr   = (*inout_buffer);
+    size  = (*inout_buffer_size);
     param = ptr;
+    
+    /* skip alphanumeric+spaces ':' spaces */
     while( size>0 && IS_ALPHA_SPACE(*ptr) ) { --size; ++ptr; }
     if( size==0 || *ptr!=':' ) { return 0; }
     --size; ++ptr;
-    while( size>0 && *ptr!=',' ) { --size; ++ptr; }
-    param_size = (ptr - param);
+    while( size>0 && IS_SPACE(*ptr) ) { --size; ++ptr; }
     
+    /* If the buffer runs out (size == 0) or the end of a */
+    /* line is reached (*ptr == '\n'), an error occurs    */
+    if( size==0 || *ptr=='\n' ) { return 0; }
+    
+    /* at this point in the code, '*ptr' indicates the opening character */
+    /* then let's determine closing character based on it                */
+    switch( *ptr )
+    {
+        case '"': close_char = '"'; break;
+        case '{': close_char = '}'; break;
+        default : close_char = ','; break;
+    }
+    --size; ++ptr;
+    while( size>0 && *ptr!=close_char ) { --size; ++ptr; }
+    if( size==0 && close_char!=',' ) { return 0; }
+    while( size>0 && *ptr!=',' ) { --size; ++ptr; }
+    
+    /* at this point (*ptr) is equal to ',' or the end of the buffer */
+    param_size = (ptr - param);
     if( size>0 ) { --size; ++ptr; }
     (*out_param        ) = param;
     (*out_param_size   ) = param_size;
