@@ -44,8 +44,8 @@
 #include "resources.h"
 #include "utils_png.h"
 #include "utils_jpgtx.h"
-#include "utils_parser.h"
 #include "utils_widget.h"
+#include "utils_sdparams.h"
 #include "sdprompt-viewer-plugin.h"
 #include "sdprompt-viewer-preferences.h"
 
