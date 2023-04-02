@@ -54,7 +54,6 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">Sidebar</property>
-                <property name="xalign">0</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>
@@ -92,7 +91,7 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <child>
-                          <object class="GtkCheckButton" id="force_minimum_width">
+                          <object class="GtkCheckButton" id="force_width_check_button">
                             <property name="label" translatable="yes">Force minimum width:</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
@@ -106,9 +105,11 @@
                           </packing>
                         </child>
                         <child>
-                          <object class="GtkSpinButton" id="minimum_width">
+                          <object class="GtkSpinButton" id="force_width_spin_button">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="climb-rate">1</property>
+                            <property name="numeric">True</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -157,7 +158,6 @@
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <property name="label" translatable="yes">More</property>
-                <property name="xalign">0</property>
                 <attributes>
                   <attribute name="weight" value="bold"/>
                 </attributes>

@@ -119,7 +119,7 @@ sdprompt_viewer_plugin_class_init( SDPromptViewerPluginClass *klass )
     
     g_object_class_install_property(
         object_class, PROP_MINIMUM_WIDTH,
-        g_param_spec_int("minimum-width",0,0, 0,1024, 128, flags) );
+        g_param_spec_double("minimum-width",0,0, 100,1000, 480, flags) );
                                       
     g_object_class_install_property(
         object_class, PROP_FORCE_VISIBILITY,
@@ -134,9 +134,10 @@ sdprompt_viewer_plugin_class_finalize( SDPromptViewerPluginClass *klass )
 }
 
 static void
-sdprompt_viewer_plugin_init( SDPromptViewerPlugin *object )
+sdprompt_viewer_plugin_init( SDPromptViewerPlugin *plugin )
 {
     eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPlugin initializing" );
+    plugin->sidebar_min_stored = FALSE;
 }
 
 static void
@@ -149,78 +150,6 @@ sdprompt_viewer_plugin_dispose( GObject *object )
 
     G_OBJECT_CLASS( sdprompt_viewer_plugin_parent_class )->dispose( object );
 }
-
-/*------------------------------ PROPERTIES -------------------------------*/
-
-static void
-sdprompt_viewer_plugin_get_property(GObject    *object,
-                                    guint       prop_id,
-                                    GValue     *value,
-                                    GParamSpec *pspec)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
-    switch (prop_id)
-    {
-        case PROP_SHOW_UNKNOWN_PARAMS:
-            g_value_set_boolean(value, plugin->show_unknown_params);
-            break;
-            
-        case PROP_FORCE_MINIMUM_WIDTH:
-            g_value_set_boolean(value, plugin->force_minimum_width);
-            break;
-            
-        case PROP_MINIMUM_WIDTH:
-            g_value_set_int(value, plugin->minimum_width);
-            break;
-            
-        case PROP_FORCE_VISIBILITY:
-            g_value_set_boolean(value, plugin->force_visibility);
-            break;
-            
-        case PROP_WINDOW:
-            g_value_set_object(value, plugin->window);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
-    }
-}
-
-static void
-sdprompt_viewer_plugin_set_property(GObject       *object,
-                                     guint         prop_id,
-                                     const GValue *value,
-                                     GParamSpec   *pspec)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
-    switch (prop_id)
-    {
-        case PROP_SHOW_UNKNOWN_PARAMS:
-            plugin->show_unknown_params = g_value_get_boolean(value);
-            break;
-            
-        case PROP_FORCE_MINIMUM_WIDTH:
-            plugin->force_minimum_width = g_value_get_boolean(value);
-            break;
-            
-        case PROP_MINIMUM_WIDTH:
-            plugin->minimum_width = g_value_get_int(value);
-            break;
-            
-        case PROP_FORCE_VISIBILITY:
-            plugin->force_visibility = g_value_get_boolean(value);
-            break;
-
-        case PROP_WINDOW:
-            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
-            break;
-            
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
-    }
-}
-
 
 /*---------------------------- USER INTERFACE -----------------------------*/
 
@@ -342,6 +271,36 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
     }
 }
 
+static void
+set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
+                           gint                  min_width)
+{
+    EogWindow *window  = plugin->window;
+    GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
+    if( !sidebar ) { return; }
+
+    /* store original minimum size */
+    if( min_width >= 0 ) {
+        if( !plugin->sidebar_min_stored ) {
+             plugin->sidebar_min_stored = TRUE;
+            gtk_widget_get_size_request(
+                sidebar, &plugin->sidebar_min_width, &plugin->sidebar_min_height );
+        }
+    }
+    /* restore original minimum size */
+    else {
+        if( plugin->sidebar_min_stored ) {
+            plugin->sidebar_min_stored = FALSE;
+            gtk_widget_set_size_request(
+                sidebar, plugin->sidebar_min_width, plugin->sidebar_min_height );
+        }
+    }
+    /* if the original minimum size is stored then apply the new one */
+    if( plugin->sidebar_min_stored ) {
+        gtk_widget_set_size_request( sidebar, min_width, plugin->sidebar_min_height );
+    }
+}
+
 /*-------------------------------- EVENTS ---------------------------------*/
 
 static void
@@ -443,7 +402,7 @@ on_deactivate( EogWindowActivatable *activatable )
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
     GtkWidget *sidebar, *thumbview;
 
-    /* remove_statusbar_entry (plugin); */
+    set_sidebar_minimum_width( plugin, -1 );
 
     sidebar = eog_window_get_sidebar (plugin->window);
     eog_sidebar_remove_page(EOG_SIDEBAR (sidebar),
@@ -461,6 +420,81 @@ eog_window_activatable_iface_init(EogWindowActivatableInterface *iface)
 {
     iface->activate   = on_activate;
     iface->deactivate = on_deactivate;
+}
+
+/*------------------------------ PROPERTIES -------------------------------*/
+
+static void
+sdprompt_viewer_plugin_get_property(GObject    *object,
+                                    guint       prop_id,
+                                    GValue     *value,
+                                    GParamSpec *pspec)
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
+    switch (prop_id)
+    {
+        case PROP_SHOW_UNKNOWN_PARAMS:
+            g_value_set_boolean(value, plugin->show_unknown_params);
+            break;
+            
+        case PROP_FORCE_MINIMUM_WIDTH:
+            g_value_set_boolean(value, plugin->force_minimum_width);
+            break;
+            
+        case PROP_MINIMUM_WIDTH:
+            g_value_set_double(value, plugin->minimum_width);
+            break;
+            
+        case PROP_FORCE_VISIBILITY:
+            g_value_set_boolean(value, plugin->force_visibility);
+            break;
+            
+        case PROP_WINDOW:
+            g_value_set_object(value, plugin->window);
+            break;
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
+    }
+}
+
+static void
+sdprompt_viewer_plugin_set_property(GObject       *object,
+                                     guint         prop_id,
+                                     const GValue *value,
+                                     GParamSpec   *pspec)
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
+    switch (prop_id)
+    {
+        case PROP_SHOW_UNKNOWN_PARAMS:
+            plugin->show_unknown_params = g_value_get_boolean(value);
+            break;
+            
+        case PROP_FORCE_MINIMUM_WIDTH:
+            plugin->force_minimum_width = g_value_get_boolean(value);
+            set_sidebar_minimum_width( plugin,
+                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
+            break;
+            
+        case PROP_MINIMUM_WIDTH:
+            plugin->minimum_width = g_value_get_double(value);
+            set_sidebar_minimum_width( plugin,
+                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
+            break;
+            
+        case PROP_FORCE_VISIBILITY:
+            plugin->force_visibility = g_value_get_boolean(value);
+            break;
+
+        case PROP_WINDOW:
+            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
+            break;
+            
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
+    }
 }
 
 /*========================= PLUGIN MAIN FUNCTION ==========================*/

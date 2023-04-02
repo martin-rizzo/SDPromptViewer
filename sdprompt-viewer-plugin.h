@@ -98,11 +98,16 @@ struct         _SDPromptViewerPlugin
     /* Properties */
     gboolean show_unknown_params;
     gboolean force_minimum_width;
-    gint     minimum_width;
+    gdouble  minimum_width;
     gboolean force_visibility;
 
     /* Handlers ids */
     guint selection_changed_id;
+    
+    /* Private data (?) */
+    gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */
+    gint     sidebar_min_width;
+    gint     sidebar_min_height;
 
 };
 
