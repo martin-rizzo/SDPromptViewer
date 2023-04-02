@@ -212,126 +212,97 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
 }
 
 static void
-show_size( SDPromptViewerPlugin *plugin, gboolean hires,
-           const gchar *text, int text_size )
+show_widget( GtkBuilder  *builder,
+             const gchar *widget_name,
+             const gchar *str_value,
+             const gchar *str_value_default)
 {
-    const gchar *ptr; int size;
-    const gchar *width_widget_name, *height_widget_name;
-    GtkWidget *width_widget, *height_widget;
-    GtkBuilder *builder = plugin->sidebar_builder;
-    if( text_size<0 ) { text_size = strlen(text); }
+    GtkWidget *widget = get_widget( builder, widget_name );
+    if( !widget ) { return; }
     
-    width_widget_name  = hires ? "hires_width_entry"  : "width_entry" ;
-    height_widget_name = hires ? "hires_height_entry" : "height_entry";
-    width_widget  = get_widget( builder, width_widget_name  );
-    height_widget = get_widget( builder, height_widget_name );
-    if( width_widget && height_widget ) {
-        ptr = text; size = text_size;
-        while( size>0 && '0'<=*ptr && *ptr<='9' ) { --size; ++ptr; }
-        set_widget_text( width_widget, text, (ptr-text) );
-        if( size>0) { --size; ++ptr; }
-        set_widget_text( height_widget, ptr, size );
-        show_group_ancestor( height_widget );
-    }
-}
-
-static void
-show_unknown( SDPromptViewerPlugin *plugin,
-             const gchar *key_name,
-             const gchar *text, int text_size)
-{
-    GtkWidget *group_widget;
-    GtkTextView *text_view; GtkTextBuffer *buffer;
-    GtkBuilder *builder = plugin->sidebar_builder;
-    if( text_size<0 ) { text_size = strlen(text); }
-
-    text_view = GTK_TEXT_VIEW( get_widget( builder, "unknown_text_view" ) );
-    buffer    = text_view ? gtk_text_view_get_buffer( text_view ) : NULL;
-    if( buffer ) {
-        gtk_text_buffer_insert_at_cursor( buffer, key_name, -1 );
-        gtk_text_buffer_insert_at_cursor( buffer, ": "    , -1 );
-        gtk_text_buffer_insert_at_cursor( buffer, text , text_size );
-        gtk_text_buffer_insert_at_cursor( buffer, "\n"    , -1 );
-        group_widget = get_widget( builder, "unknown_group" );
-        if( group_widget ) { gtk_widget_set_visible( group_widget, TRUE ); }
-    }
-}
-
-
-static void
-show_sd_parameter( SDPromptViewerPlugin *plugin,
-                   const gchar *key,
-                   const gchar *value)
-{
-#   define IF_EQUAL(key,key_name) if(0==strcmp(key,key_name))
-    GtkBuilder *builder = plugin->sidebar_builder;
-    const gchar *widget_id = NULL;
-    GtkWidget   *widget    = NULL;
-
-/*  eog_debug_message( DEBUG_PLUGINS, "key   = %s\n", key   );  */
-/*  eog_debug_message( DEBUG_PLUGINS, "value = %s\n", value );  */
-  
-         IF_EQUAL(key,"Prompt"         ) { widget_id = "prompt_text_view";   }
-    else IF_EQUAL(key,"Negative prompt") { widget_id = "negative_text_view"; }
-    else IF_EQUAL(key,"Wildcard prompt") { widget_id = "wildcard_text_view"; }
-    else IF_EQUAL(key,"Steps"          ) { widget_id = "steps_entry";        }
-    else IF_EQUAL(key,"Sampler"        ) { widget_id = "sampler_entry";      }
-    else IF_EQUAL(key,"CFG scale"      ) { widget_id = "cfg_scale_entry";    }
-    else IF_EQUAL(key,"Seed"           ) { widget_id = "seed_entry";         }
-    else IF_EQUAL(key,"Model hash"     ) { widget_id = "model_hash_entry";   }
-    else IF_EQUAL(key,"Model"          ) { widget_id = "model_entry";        }
-    else IF_EQUAL(key,"Hires upscaler" ) { widget_id = "hires_upscaler_entry"; }
-    else IF_EQUAL(key,"Hires steps"    ) { widget_id = "hires_steps_entry";  }
-    else IF_EQUAL(key,"Hires upscale"  ) { widget_id = "hires_upscale_entry"; }
-    else IF_EQUAL(key,"Denoising strength") { widget_id = "hires_denoising_entry"; }
-    else IF_EQUAL(key,"Mask blur"      ) { widget_id = "inpaint_mask_blur_entry"; }
-    else IF_EQUAL(key,"Eta"            ) { widget_id = "eta_entry";          }
-    else IF_EQUAL(key,"ENSD"           ) { widget_id = "ensd_entry";         }
-    else IF_EQUAL(key,"Clip skip"      ) { widget_id = "clip_skip_entry";    }
-    else IF_EQUAL(key,"Size"           ) { show_size(plugin,FALSE,value,-1); }
-    else IF_EQUAL(key,"Hires resize"   ) { show_size(plugin,TRUE ,value,-1); }
-    else                                 { show_unknown(plugin,key,value,-1); }
-    /* .... */
-    
-    if( widget_id ) {
-        widget = get_widget( builder, widget_id );
-    }
-    if( widget )
-    {
-        set_widget_text( widget, value, -1 );
+    if( str_value ) {
+        set_widget_text( widget, str_value, -1 );
         show_group_ancestor( widget );
+    } else {
+        set_widget_text( widget, str_value_default, -1 );
     }
-#   undef IF_EQUAL
+}
+
+static void
+show_unknowns_parameters( GtkBuilder   *builder,
+                          SDParameters *parameters )
+{
+    int i;
+    GtkTextView   *text_view = GTK_TEXT_VIEW( get_widget(builder, "unknown_text_view") );
+    GtkTextBuffer *buffer    = text_view ? gtk_text_view_get_buffer( text_view ) : NULL;
+    if( !buffer ) { return; }
+    
+    gtk_text_buffer_set_text( buffer, "", -1 );
+    if( parameters->unknowns_count > 0 ) {
+        show_group_ancestor( GTK_WIDGET(text_view) );
+        for( i=0; i<parameters->unknowns_count; ++i ) {
+            const char *key   = parameters->unknowns[i].key;
+            const char *value = parameters->unknowns[i].value;
+            gtk_text_buffer_insert_at_cursor( buffer,  key  , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer,  ": " , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer, value , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer, "\n"  , -1 );
+        }        
+    }
+}
+
+static void
+show_sd_parameters( SDPromptViewerPlugin *plugin,
+                    SDParameters         *parameters )
+{
+    GtkBuilder *builder; GtkWidget *main_container;
+    builder        = plugin->sidebar_builder;
+    main_container = builder ? get_widget( builder, "main_container" ) : NULL;
+    if( !main_container ) { return; }
+    
+    hide_group_descendants( main_container );    
+    show_widget(builder,"prompt_text_view"   ,parameters->prompt         ,"");
+    show_widget(builder,"negative_text_view" ,parameters->negative_prompt,"");
+    show_widget(builder,"wildcard_text_view" ,parameters->wildcard_prompt,"");
+    show_widget(builder,"model_entry"        ,parameters->model          ,"");
+    show_widget(builder,"model_hash_entry"   ,parameters->model_hash     ,"");
+    show_widget(builder,"sampler_entry"      ,parameters->sampler        ,"");
+    show_widget(builder,"steps_entry"        ,parameters->steps          ,"");
+    show_widget(builder,"cfg_scale_entry"    ,parameters->cfg_scale      ,"");
+    show_widget(builder,"seed_entry"         ,parameters->seed           ,"");
+    show_widget(builder,"width_entry"        ,parameters->width          ,"");
+    show_widget(builder,"height_entry"       ,parameters->height         ,"");
+    show_widget(builder,"hires_upscaler_entry",parameters->hires_upscaler,"");
+    show_widget(builder,"hires_steps_entry"  ,parameters->hires_steps    ,"");
+    show_widget(builder,"hires_upscale_entry",parameters->hires_upscale  ,"");
+    show_widget(builder,"hires_width_entry"  ,parameters->hires_width    ,"");
+    show_widget(builder,"hires_height_entry" ,parameters->hires_height   ,"");
+    show_widget(builder,"inpaint_mask_blur_entry",parameters->mask_blur  ,"");
+    show_widget(builder,"eta_entry"          ,parameters->eta            ,"");
+    show_widget(builder,"ensd_entry"         ,parameters->ensd           ,"");
+    show_widget(builder,"clip_skip_entry"    ,parameters->clip_skip      ,"");
+    
+    /*
+       width, height, hires_width, hires_height
+    */
+    show_widget(builder,"hires_denoising_entry",parameters->denoising,"");
+    show_unknowns_parameters( builder, parameters );
 }
 
 /*-------------------------------- EVENTS ---------------------------------*/
 
-static void
-on_parse_sd_parameter(const char *key,
-                      int         key_size,
-                      const char *value,
-                      int         value_size,
-                      void       *user_ptr,
-                      int         user_int)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
-    gchar *k = g_strndup(key, key_size);
-    gchar *v = g_strndup(value, value_size); 
-    show_sd_parameter( plugin, k, v );
-    g_free(k);
-    g_free(v);
-}
 
 static void
 on_png_text_chunk_loaded(gchar *text, gpointer user_ptr, int user_int) {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
     
     if( text && text[0] ) {
-        eog_debug_message( DEBUG_PLUGINS, "#PROMPT:\n\"%s\"", text);
-        hide_all_widgets( plugin );
-        parse_sd_parameters( text, -1,
-                             on_parse_sd_parameter, user_ptr, user_int );
-    }
+        SDParameters parameters;
+        eog_debug_message( DEBUG_PLUGINS, "## PROMPT ##:\n%s", text );
+
+        parse_sd_parameters_from_buffer( &parameters, text, -1 );
+        show_sd_parameters( plugin, &parameters );
+    }    
 }
 
 /*
