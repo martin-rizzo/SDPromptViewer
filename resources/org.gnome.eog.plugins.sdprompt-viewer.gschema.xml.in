@@ -3,31 +3,35 @@
   <schema gettext-domain="@GETTEXT_PACKAGE@"
           id="org.gnome.eog.plugins.sdprompt-viewer"
           path="/org/gnome/eog/plugins/sdprompt-viewer/">
-    
-   <key name="force-minimum-width" type="b">
-      <summary>Force minimum width for the sidebar</summary>
-      <description>
-        If set to true, the minimum width of the sidebar will be forced to the value specified in 'sidebar-minimum-width'.
-      </description>
-      <default>false</default>
-    </key>
+   
+  <key name="show-unknown-params" type="b">
+    <default>false</default>
+    <summary>Show unknown generation parameters</summary>
+    <description>Enable to show generation parameters that were not identified by the parser.</description>
+  </key>
 
-    <key name="minimum-width" type="i">
-      <summary>Sidebar minimum width</summary>
-      <description>
-        The minimum width of the sidebar. This value is used only if 'force-minimum-width' is set to true.
-      </description>
-      <default>0</default>
-      <range min="0" max="1000"/>
-    </key>   
-        
-    <key name="always-on-top" type="b">
-      <default>false</default>
-      <summary>Always bring panel to the top</summary>
-      <description>
-        If this setting is true, the panel will always be brought to the top of the screen.
-      </description>
-    </key>
+  <key name="force-minimum-width" type="b">
+    <summary>Force minimum width for the sidebar</summary>
+    <description>
+      If set to true, the minimum width of the sidebar will be forced to the value specified in 'sidebar-minimum-width'.
+    </description>
+    <default>false</default>
+  </key>
+
+  <key name="minimum-width" type="i">
+    <summary>Sidebar minimum width</summary>
+    <description>
+      The minimum width of the sidebar. This value is used only if 'force-minimum-width' is set to true.
+    </description>
+    <default>0</default>
+    <range min="0" max="1000"/>
+  </key>   
+
+  <key name="force-visibility" type="b">
+    <default>false</default>
+    <summary>Force visibility of this plugin in the sidebar</summary>
+    <description>When this option is enabled, this plugin will be shown in the sidebar when EOG is started.</description>
+  </key>
 
     </schema>
 </schemalist>

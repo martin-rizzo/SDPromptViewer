@@ -112,6 +112,7 @@ create_user_interface( PeasGtkConfigurable *configurable )
     GSettings *settings;
     GtkBuilder *config_builder;
     GError *error = NULL;
+    GtkWidget *force_visibility_button;
     GtkWidget *force_minimum_width_widget;
     GtkWidget *minimum_width_widget;
     GObject *result;
@@ -130,11 +131,15 @@ create_user_interface( PeasGtkConfigurable *configurable )
     // Add a reference to keep the box alive after the builder is gone
     result = g_object_ref( gtk_builder_get_object(config_builder, "vbox1") );
     
+    force_visibility_button    = get_widget( config_builder, "force_visibility_button" );
     force_minimum_width_widget = get_widget( config_builder, "force_minimum_width" );
     minimum_width_widget       = get_widget( config_builder, "minimum_width"       );
+    
 
     
     /*-- binding widgets to plugin settings --*/
+    g_settings_bind( settings, SETTINGS_FORCE_VISIBILITY,
+                     force_visibility_button, "active", G_SETTINGS_BIND_DEFAULT);
     g_settings_bind( settings, SETTINGS_FORCE_MINIMUM_WIDTH,
                      force_minimum_width_widget, "active", G_SETTINGS_BIND_DEFAULT);
     g_settings_bind( settings, SETTINGS_MINIMUM_WIDTH,

@@ -96,7 +96,10 @@ struct         _SDPromptViewerPlugin
     GtkWidget     *gtkbuilder_widget;
     
     /* Properties */
+    gboolean show_unknown_params;
     gboolean force_minimum_width;
+    gint     minimum_width;
+    gboolean force_visibility;
 
     /* Handlers ids */
     guint selection_changed_id;

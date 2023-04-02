@@ -33,9 +33,10 @@
 /* FILE: resources/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml */
 #define SDPROMPT_VIEWER_GSCHEMA_ID    "org.gnome.eog.plugins.sdprompt-viewer"
 #define SDPROMPT_VIEWER_GSCHEMA_PATH "/org/gnome/eog/plugins/sdprompt-viewer/"
+#define     SETTINGS_SHOW_UNKNOWN_PARAMS    "show-unknown-params"
 #define     SETTINGS_FORCE_MINIMUM_WIDTH    "force-minimum-width"
 #define     SETTINGS_MINIMUM_WIDTH          "minimum-width"
-#define     SETTINGS_ALWAYS_ON_TOP          "always-on-top"
+#define     SETTINGS_FORCE_VISIBILITY       "force-visibility"
 
 /* FILE: resources.xml */
 #define PREFERENCES_UI "/dev/martin-rizzo/sdprompt-viewer/sdprompt-viewer-preferences.ui"

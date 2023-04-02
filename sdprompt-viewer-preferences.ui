@@ -124,11 +124,12 @@
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkCheckButton">
-                        <property name="label" translatable="yes">Bring to top</property>
+                      <object class="GtkCheckButton" id="force_visibility_button">
+                        <property name="label" translatable="yes">Force visibility of this plugin</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="receives-default">False</property>
+                        <property name="tooltip-text" translatable="yes">When this option is enabled, this plugin will be shown in the sidebar when EOG is started.</property>
                         <property name="draw-indicator">True</property>
                       </object>
                       <packing>
