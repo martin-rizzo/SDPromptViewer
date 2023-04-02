@@ -87,13 +87,15 @@ struct         _SDParameters {
     const char *seed;
     const char *width;
     const char *height;
+    const char *denoising;
     const char *hires_upscaler;
     const char *hires_steps;
+    const char *hires_denoising;
     const char *hires_upscale;
     const char *hires_width;
     const char *hires_height;
-    const char *denoising;
-    const char *mask_blur;
+    const char *inpaint_denoising;
+    const char *inpaint_mask_blur;
     const char *eta;
     const char *ensd;
     const char *clip_skip;
@@ -297,11 +299,11 @@ parse_sd_params_set(SDParameters *sd_parameters,
     ELIF_KEY("Steps"             ) sd_parameters->steps           = str_value;        
     ELIF_KEY("CFG scale"         ) sd_parameters->cfg_scale       = str_value; 
     ELIF_KEY("Seed"              ) sd_parameters->seed            = str_value; 
+    ELIF_KEY("Denoising strength") sd_parameters->denoising       = str_value; 
     ELIF_KEY("Hires upscaler"    ) sd_parameters->hires_upscaler  = str_value; 
     ELIF_KEY("Hires steps"       ) sd_parameters->hires_steps     = str_value;
     ELIF_KEY("Hires upscale"     ) sd_parameters->hires_upscale   = str_value;
-    ELIF_KEY("Denoising strength") sd_parameters->denoising       = str_value; 
-    ELIF_KEY("Mask blur"         ) sd_parameters->mask_blur       = str_value;
+    ELIF_KEY("Mask blur"         ) sd_parameters->inpaint_mask_blur=str_value;
     ELIF_KEY("Eta"               ) sd_parameters->eta             = str_value;
     ELIF_KEY("ENSD"              ) sd_parameters->ensd            = str_value;
     ELIF_KEY("Clip skip"         ) sd_parameters->clip_skip       = str_value;
@@ -338,6 +340,28 @@ parse_sd_params_from_lastline(SDParameters *sd_parameters,
             key  [ key_size   ] = '\0';
             value[ value_size ] = '\0';
             parse_sd_params_set( sd_parameters, key, value );
+        }
+    }
+}
+
+static void
+parse_sd_params_fix_denoising(SDParameters *sd_parameters)
+{
+    const char* denoising = sd_parameters->denoising;
+
+    int suspected_inpaint =
+            (denoising != NULL) && 
+            !sd_parameters->hires_upscaler &&
+            !sd_parameters->hires_upscale  &&
+            !sd_parameters->hires_width;
+    
+    if( suspected_inpaint ) {
+        if( !sd_parameters->inpaint_denoising ) {
+             sd_parameters->inpaint_denoising = denoising;
+        }
+    } else {
+        if( !sd_parameters->hires_denoising ) {
+             sd_parameters->hires_denoising = denoising;
         }
     }
 }
@@ -401,7 +425,10 @@ parse_sd_parameters(SDParameters *sd_parameters)
     }
     if( lastline ) {
         parse_sd_params_from_lastline(sd_parameters, lastline, lastline_size);
-    }    
+    }   
+    
+    /* fix denoising */
+    parse_sd_params_fix_denoising( sd_parameters );
 }
 
 /**
