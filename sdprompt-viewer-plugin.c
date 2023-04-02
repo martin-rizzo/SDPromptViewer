@@ -184,31 +184,10 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
 /*---------------------------- USER INTERFACE -----------------------------*/
 
 static void
-hide_all_widgets( SDPromptViewerPlugin *plugin )
+hide_all_widgets( GtkBuilder *builder )
 {
-    GtkBuilder *builder        = plugin->sidebar_builder;
-    GtkWidget  *main_container = get_widget( builder, "main_container" );
-    hide_group_descendants( main_container );
-    clear_descendants_text( main_container, FALSE );
-}
-
-static void
-show_spinner( SDPromptViewerPlugin *plugin )
-{
-    GtkBuilder *builder = plugin->sidebar_builder;
-    GtkWidget *spinner = get_widget(builder, "loading_spinner");
-    hide_all_widgets( plugin );
-    gtk_widget_set_visible( spinner, TRUE );
-}
-
-static void
-show_message( SDPromptViewerPlugin *plugin, const gchar *message )
-{
-    GtkBuilder *builder = plugin->sidebar_builder;
-    GtkWidget *label = get_widget(builder, "message_label");
-    hide_all_widgets( plugin );
-    gtk_widget_set_visible( label, TRUE );
-    gtk_label_set_label( GTK_LABEL(label), message);
+    GtkWidget *main_container = get_widget( builder, "main_container" );
+    if( main_container ) { hide_group_descendants( main_container ); }
 }
 
 static void
@@ -229,8 +208,8 @@ show_widget( GtkBuilder  *builder,
 }
 
 static void
-show_unknowns_parameters( GtkBuilder   *builder,
-                          SDParameters *parameters )
+show_unknowns( GtkBuilder   *builder,
+               SDParameters *parameters )
 {
     int i;
     GtkTextView   *text_view = GTK_TEXT_VIEW( get_widget(builder, "unknown_text_view") );
@@ -252,62 +231,85 @@ show_unknowns_parameters( GtkBuilder   *builder,
 }
 
 static void
-show_sd_parameters( SDPromptViewerPlugin *plugin,
-                    SDParameters         *parameters )
+show_spinner( SDPromptViewerPlugin *plugin )
 {
-    GtkBuilder *builder; GtkWidget *main_container;
+    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkWidget  *spinner = builder ? get_widget(builder, "loading_spinner") : NULL;
+    if( spinner ) {
+        hide_all_widgets( builder );
+        show_group_ancestor( spinner );
+    }
+}
+
+static void
+show_message( SDPromptViewerPlugin *plugin, const gchar *message )
+{
+    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkWidget  *label   = builder ? get_widget(builder, "message_label") : NULL;
+    if( label ) {
+        hide_all_widgets( builder );
+        show_widget( builder, "message_label", message, "");
+    }
+}
+
+static void
+show_sd_parameters( SDPromptViewerPlugin *plugin,
+                    void                 *buffer,
+                    int                   buffer_size )
+{
+    GtkBuilder *b, *builder; GtkWidget *main_container;
+    SDParameters parameters;
+    
     builder        = plugin->sidebar_builder;
     main_container = builder ? get_widget( builder, "main_container" ) : NULL;
     if( !main_container ) { return; }
     
-    hide_group_descendants( main_container );    
-    show_widget(builder,"prompt_text_view"   ,parameters->prompt         ,"");
-    show_widget(builder,"negative_text_view" ,parameters->negative_prompt,"");
-    show_widget(builder,"wildcard_text_view" ,parameters->wildcard_prompt,"");
-    show_widget(builder,"model_entry"        ,parameters->model          ,"");
-    show_widget(builder,"model_hash_entry"   ,parameters->model_hash     ,"");
-    show_widget(builder,"sampler_entry"      ,parameters->sampler        ,"");
-    show_widget(builder,"steps_entry"        ,parameters->steps          ,"");
-    show_widget(builder,"cfg_scale_entry"    ,parameters->cfg_scale      ,"");
-    show_widget(builder,"seed_entry"         ,parameters->seed           ,"");
-    show_widget(builder,"width_entry"        ,parameters->width          ,"");
-    show_widget(builder,"height_entry"       ,parameters->height         ,"");
-    show_widget(builder,"hires_upscaler_entry",parameters->hires_upscaler,"");
-    show_widget(builder,"hires_steps_entry"  ,parameters->hires_steps    ,"");
-    show_widget(builder,"hires_upscale_entry",parameters->hires_upscale  ,"");
-    show_widget(builder,"hires_width_entry"  ,parameters->hires_width    ,"");
-    show_widget(builder,"hires_height_entry" ,parameters->hires_height   ,"");
-    show_widget(builder,"inpaint_mask_blur_entry",parameters->mask_blur  ,"");
-    show_widget(builder,"eta_entry"          ,parameters->eta            ,"");
-    show_widget(builder,"ensd_entry"         ,parameters->ensd           ,"");
-    show_widget(builder,"clip_skip_entry"    ,parameters->clip_skip      ,"");
+    parse_sd_parameters_from_buffer( &parameters, buffer, buffer_size );
     
-    /*
-       width, height, hires_width, hires_height
-    */
-    show_widget(builder,"hires_denoising_entry",parameters->denoising,"");
-    show_unknowns_parameters( builder, parameters );
+    b = builder;
+    hide_all_widgets( builder );    
+    show_widget(b,"prompt_text_view"       ,parameters.prompt           ,"");
+    show_widget(b,"negative_text_view"     ,parameters.negative_prompt  ,"");
+    show_widget(b,"wildcard_text_view"     ,parameters.wildcard_prompt  ,"");
+    show_widget(b,"model_entry"            ,parameters.model            ,"");
+    show_widget(b,"model_hash_entry"       ,parameters.model_hash       ,"");
+    show_widget(b,"sampler_entry"          ,parameters.sampler          ,"");
+    show_widget(b,"steps_entry"            ,parameters.steps            ,"");
+    show_widget(b,"cfg_scale_entry"        ,parameters.cfg_scale        ,"");
+    show_widget(b,"seed_entry"             ,parameters.seed             ,"");
+    show_widget(b,"width_entry"            ,parameters.width            ,"");
+    show_widget(b,"height_entry"           ,parameters.height           ,"");
+    show_widget(b,"hires_upscaler_entry"   ,parameters.hires_upscaler   ,"");
+    show_widget(b,"hires_steps_entry"      ,parameters.hires_steps      ,"");
+    show_widget(b,"hires_denoising_entry"  ,parameters.hires_denoising  ,"");
+    show_widget(b,"hires_upscale_entry"    ,parameters.hires_upscale    ,"");
+    show_widget(b,"hires_width_entry"      ,parameters.hires_width      ,"");
+    show_widget(b,"hires_height_entry"     ,parameters.hires_height     ,"");
+    show_widget(b,"inpaint_denoising_entry",parameters.inpaint_denoising,"");
+    show_widget(b,"inpaint_mask_blur_entry",parameters.inpaint_mask_blur,"");
+    show_widget(b,"eta_entry"              ,parameters.eta              ,"");
+    show_widget(b,"ensd_entry"             ,parameters.ensd             ,"");
+    show_widget(b,"clip_skip_entry"        ,parameters.clip_skip        ,"");
+    show_unknowns( builder, &parameters );
 }
 
 /*-------------------------------- EVENTS ---------------------------------*/
-
 
 static void
 on_png_text_chunk_loaded(gchar *text, gpointer user_ptr, int user_int) {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
     
     if( text && text[0] ) {
-        SDParameters parameters;
-        eog_debug_message( DEBUG_PLUGINS, "## PROMPT ##:\n%s", text );
-
-        parse_sd_parameters_from_buffer( &parameters, text, -1 );
-        show_sd_parameters( plugin, &parameters );
-    }    
+        show_sd_parameters( plugin, text, -1 );
+    } else {
+        show_message( plugin,
+        "No Stable Diffusion parameters found in the image." );
+    }
 }
 
 /*
 static void
-on_jpg_text_loaded(gchar *text, gpointer data_ptr, int data_int) {
+on_jpg_text_file_loaded(gchar *text, gpointer user_ptr, int user_int) {
     
 }
 */
@@ -316,7 +318,10 @@ static void
 on_selection_changed(EogThumbView *view, SDPromptViewerPlugin *plugin) {
     GFile *file; EogImage *image;
     
-    if( eog_thumb_view_get_n_selected( view ) == 0 ) { return; }
+    if( eog_thumb_view_get_n_selected( view ) == 0 ) {
+        show_message( plugin, "No image selected." );
+        return;
+    }
     image = eog_thumb_view_get_first_selected_image( view );
     file  = image ? eog_image_get_file( image ) : NULL;
     if( file ) {
@@ -324,8 +329,8 @@ on_selection_changed(EogThumbView *view, SDPromptViewerPlugin *plugin) {
         load_png_text_chunk(file, "parameters", 
                             on_png_text_chunk_loaded, plugin, 0);
     }
-    if( image ) { g_object_unref(image); }
     if( file  ) { g_object_unref(file ); }
+    if( image ) { g_object_unref(image); }
 }
 
 

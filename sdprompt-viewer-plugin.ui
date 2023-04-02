@@ -802,7 +802,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Hires. fix</property>
+                        <property name="label" translatable="yes">Highres fix</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                         </attributes>
@@ -1077,7 +1077,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Settings</property>
+                        <property name="label" translatable="yes">Extra settings</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                         </attributes>
@@ -1117,7 +1117,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Unknown</property>
+                        <property name="label" translatable="yes">Unknown parameters</property>
                         <attributes>
                           <attribute name="weight" value="bold"/>
                         </attributes>
