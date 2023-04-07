@@ -192,6 +192,23 @@ set_widget( GtkBuilder  *builder,
 }
 
 static void
+set_widgetf( GtkBuilder  *builder,
+             const gchar *widget_name,
+             float        value,
+             int          number_of_decimals)
+{
+    gchar *str_value;
+    switch( number_of_decimals ) {
+        case 0:  str_value = g_strdup_printf("%.0f", value); break;
+        case 1:  str_value = g_strdup_printf("%.1f", value); break;
+        case 2:  str_value = g_strdup_printf("%.2f", value); break;
+        default: str_value = g_strdup_printf("%.3f", value); break;
+    }
+    set_widget( builder, widget_name, str_value, "" );
+    g_free( str_value );
+}
+
+static void
 show_unknowns_parameters( GtkBuilder   *builder,
                           SDParameters *parameters )
 {
@@ -276,15 +293,28 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
     set_widget(b, "height_entry"           ,parameters.height            ,"");
     set_widget(b, "hires_upscaler_entry"   ,parameters.hires.upscaler    ,"");
     set_widget(b, "hires_steps_entry"      ,parameters.hires.steps       ,"");
-    set_widget(b, "hires_denoising_entry"  ,parameters.hires.denoising   ,"");
-    set_widget(b, "hires_upscale_entry"    ,parameters.hires.upscale     ,"");
-    set_widget(b, "hires_width_entry"      ,parameters.hires.width       ,"");
-    set_widget(b, "hires_height_entry"     ,parameters.hires.height      ,"");
+    set_widget(b, "hires_denoising_entry"  ,parameters.hires.denoising   ,"");    
     set_widget(b, "inpaint_denoising_entry",parameters.inpaint.denoising ,"");
     set_widget(b, "inpaint_mask_blur_entry",parameters.inpaint.mask_blur ,"");
     set_widget(b, "eta_entry"              ,parameters.settings.eta      ,"");
     set_widget(b, "ensd_entry"             ,parameters.settings.ensd     ,"");
     set_widget(b, "clip_skip_entry"        ,parameters.settings.clip_skip,"");
+    
+    if( parameters.hires.width )
+    { set_widget(b,"hires_width_entry" ,parameters.hires.width ,""); }
+    else
+    { set_widgetf(b,"hires_width_entry", parameters.hires.calc_width,0); }
+    
+    if( parameters.hires.height )
+    { set_widget(b,"hires_height_entry", parameters.hires.height, ""); }
+    else
+    { set_widgetf(b,"hires_height_entry", parameters.hires.calc_height,0); }
+
+    if( parameters.hires.upscale )
+    { set_widget(b,"hires_upscale_entry", parameters.hires.upscale, ""); }
+    else
+    { set_widgetf(b,"hires_upscale_entry", parameters.hires.calc_upscale,2); }
+    
     show_unknowns_parameters(b, &parameters);
     
     if( plugin->force_visibility ) {

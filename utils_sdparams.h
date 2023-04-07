@@ -56,6 +56,7 @@
       }
     
 */
+#include <stdlib.h>
 #include <string.h>
 
 /* Maximum size in bytes of the 'input' field in the SDParameters struct. */
@@ -101,9 +102,9 @@ struct         _SDParameters {
         const char *upscale;
         const char *width;
         const char *height;
-        float       calculated_upscale;
-        float       calculated_width;
-        float       calculated_height;
+        float       calc_upscale;
+        float       calc_width;
+        float       calc_height;
     } hires;
     
     struct { /* inpaint */
@@ -363,10 +364,12 @@ parse_sd_params_from_lastline(SDParameters *sd_parameters,
 }
 
 static void
-parse_sd_params_fix_denoising(SDParameters *sd_parameters)
+parse_sd_params_final_fix(SDParameters *sd_parameters)
 {
-    const char* denoising;
+    const char* denoising; char *endptr;
+    float width, height, hr_width, hr_height, hr_upscale; int n;
     
+    /* 1) set 'has_info' field in each sub-group */
     sd_parameters->model.has_info = 
       ( sd_parameters->model.name != NULL ) ||
       ( sd_parameters->model.hash != NULL );
@@ -386,6 +389,7 @@ parse_sd_params_fix_denoising(SDParameters *sd_parameters)
       ( sd_parameters->settings.ensd      != NULL ) ||
       ( sd_parameters->settings.clip_skip != NULL );
     
+    /* 2) identify denoising sub-group */
     denoising = sd_parameters->denoising;
     if( sd_parameters->inpaint.has_info ) {
         if( !sd_parameters->inpaint.denoising ) {
@@ -394,6 +398,33 @@ parse_sd_params_fix_denoising(SDParameters *sd_parameters)
     } else if( sd_parameters->hires.has_info ) {
         if( !sd_parameters->hires.denoising ) {
              sd_parameters->hires.denoising = denoising;
+        }
+    }
+    
+    /* 3) calculate hires width, height & upscale fields */
+    width = sd_parameters->width ?
+        strtof( sd_parameters->width, &endptr ) : 0;
+    height = sd_parameters->height ?
+        strtof( sd_parameters->height, &endptr ): 0;
+    hr_width = sd_parameters->hires.width ?
+        strtof( sd_parameters->hires.width, &endptr ) : 0;
+    hr_height = sd_parameters->hires.height ?
+        strtof( sd_parameters->hires.height, &endptr ) : 0;
+    hr_upscale = sd_parameters->hires.upscale ?
+        strtof( sd_parameters->hires.upscale,  &endptr ) : 0;
+        
+    if( hr_width  == 0.0f ) {
+        sd_parameters->hires.calc_width = width  * hr_upscale;
+    }
+    if( hr_height == 0.0f ) {
+        sd_parameters->hires.calc_height = height * hr_upscale;
+    }
+    if( hr_upscale == 0.0f ) {
+        n = 0;
+        if( hr_width>0  && width>0  ) { hr_upscale += hr_width/width;   n++; }
+        if( hr_height>0 && height>0 ) { hr_upscale += hr_height/height; n++; }
+        if( n>0 ) {
+            sd_parameters->hires.calc_upscale = hr_upscale / (float)n;
         }
     }
 }
@@ -459,8 +490,8 @@ parse_sd_parameters(SDParameters *sd_parameters)
         parse_sd_params_from_lastline(sd_parameters, lastline, lastline_size);
     }   
     
-    /* fix denoising */
-    parse_sd_params_fix_denoising( sd_parameters );
+    /* final calculation of the remaining fields */
+    parse_sd_params_final_fix( sd_parameters );
 }
 
 /**
