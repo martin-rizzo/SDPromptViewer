@@ -71,16 +71,14 @@
  */
 typedef struct _SDParameters SDParameters;
 struct         _SDParameters {
-    /* input */
+    /* input buffer */
     char input[SD_PARAMETERS_INPUT_SIZE];
     int _zero_padding;
         
-    /* output */
+    /* output parameters */
     const char *prompt;
     const char *negative_prompt;
     const char *wildcard_prompt;
-    const char *model;
-    const char *model_hash;
     const char *sampler;
     const char *steps;
     const char *cfg_scale;
@@ -88,19 +86,40 @@ struct         _SDParameters {
     const char *width;
     const char *height;
     const char *denoising;
-    const char *hires_upscaler;
-    const char *hires_steps;
-    const char *hires_denoising;
-    const char *hires_upscale;
-    const char *hires_width;
-    const char *hires_height;
-    const char *inpaint_denoising;
-    const char *inpaint_mask_blur;
-    const char *eta;
-    const char *ensd;
-    const char *clip_skip;
     
-    struct {
+    struct { /* model */
+        int         has_info;
+        const char *name;
+        const char *hash;
+    } model;
+    
+    struct { /* hires. fix */
+        int         has_info;
+        const char *upscaler;
+        const char *steps;
+        const char *denoising;
+        const char *upscale;
+        const char *width;
+        const char *height;
+        float       calculated_upscale;
+        float       calculated_width;
+        float       calculated_height;
+    } hires;
+    
+    struct { /* inpaint */
+        int         has_info;
+        const char *denoising;
+        const char *mask_blur;
+    } inpaint;
+    
+    struct { /* override settings */
+        int         has_info;
+        const char *eta;
+        const char *ensd;
+        const char *clip_skip;
+    } settings;
+    
+    struct { /* unknown parameters [] */
         const char *key;
         const char *value;
     } unknowns[SD_PARAMETERS_ARRAY_SIZE];
@@ -274,8 +293,8 @@ parse_sd_params_set_wxh(SDParameters *sd_parameters,
     str_height = ptr;
     
     if( hires ) {
-        sd_parameters->hires_width  = str_width;
-        sd_parameters->hires_height = str_height;
+        sd_parameters->hires.width  = str_width;
+        sd_parameters->hires.height = str_height;
     } else {
         sd_parameters->width  = str_width;
         sd_parameters->height = str_height;
@@ -290,23 +309,23 @@ parse_sd_params_set(SDParameters *sd_parameters,
 #   define IF_KEY(keyname)   if( 0==strcmp(keyname,str_key))
 #   define ELIF_KEY(keyname) else IF_KEY(keyname)
     
-      IF_KEY("Prompt"            ) sd_parameters->prompt          = str_value;   
-    ELIF_KEY("Negative prompt"   ) sd_parameters->negative_prompt = str_value; 
-    ELIF_KEY("Wildcard prompt"   ) sd_parameters->wildcard_prompt = str_value; 
-    ELIF_KEY("Model"             ) sd_parameters->model           = str_value; 
-    ELIF_KEY("Model hash"        ) sd_parameters->model_hash      = str_value; 
-    ELIF_KEY("Sampler"           ) sd_parameters->sampler         = str_value;  
-    ELIF_KEY("Steps"             ) sd_parameters->steps           = str_value;        
-    ELIF_KEY("CFG scale"         ) sd_parameters->cfg_scale       = str_value; 
-    ELIF_KEY("Seed"              ) sd_parameters->seed            = str_value; 
+      IF_KEY("Prompt"          ) sd_parameters->prompt            = str_value;   
+    ELIF_KEY("Negative prompt" ) sd_parameters->negative_prompt   = str_value; 
+    ELIF_KEY("Wildcard prompt" ) sd_parameters->wildcard_prompt   = str_value; 
+    ELIF_KEY("Model"           ) sd_parameters->model.name        = str_value; 
+    ELIF_KEY("Model hash"      ) sd_parameters->model.hash        = str_value; 
+    ELIF_KEY("Sampler"         ) sd_parameters->sampler           = str_value;  
+    ELIF_KEY("Steps"           ) sd_parameters->steps             = str_value;        
+    ELIF_KEY("CFG scale"       ) sd_parameters->cfg_scale         = str_value; 
+    ELIF_KEY("Seed"            ) sd_parameters->seed              = str_value; 
     ELIF_KEY("Denoising strength") sd_parameters->denoising       = str_value; 
-    ELIF_KEY("Hires upscaler"    ) sd_parameters->hires_upscaler  = str_value; 
-    ELIF_KEY("Hires steps"       ) sd_parameters->hires_steps     = str_value;
-    ELIF_KEY("Hires upscale"     ) sd_parameters->hires_upscale   = str_value;
-    ELIF_KEY("Mask blur"         ) sd_parameters->inpaint_mask_blur=str_value;
-    ELIF_KEY("Eta"               ) sd_parameters->eta             = str_value;
-    ELIF_KEY("ENSD"              ) sd_parameters->ensd            = str_value;
-    ELIF_KEY("Clip skip"         ) sd_parameters->clip_skip       = str_value;
+    ELIF_KEY("Hires upscaler"  ) sd_parameters->hires.upscaler    = str_value; 
+    ELIF_KEY("Hires steps"     ) sd_parameters->hires.steps       = str_value;
+    ELIF_KEY("Hires upscale"   ) sd_parameters->hires.upscale     = str_value;
+    ELIF_KEY("Mask blur"       ) sd_parameters->inpaint.mask_blur = str_value;
+    ELIF_KEY("Eta"             ) sd_parameters->settings.eta      = str_value;
+    ELIF_KEY("ENSD"            ) sd_parameters->settings.ensd     = str_value;
+    ELIF_KEY("Clip skip"       ) sd_parameters->settings.clip_skip= str_value;
     ELIF_KEY("Size") {
         parse_sd_params_set_wxh( sd_parameters, str_value, 0 ); }
     ELIF_KEY("Hires resize") {
@@ -318,7 +337,6 @@ parse_sd_params_set(SDParameters *sd_parameters,
             sd_parameters->unknowns[index].value = str_value;
         }
     }
-    
 #   undef IF_KEY
 #   undef ELIF_KEY
 }
@@ -347,21 +365,35 @@ parse_sd_params_from_lastline(SDParameters *sd_parameters,
 static void
 parse_sd_params_fix_denoising(SDParameters *sd_parameters)
 {
-    const char* denoising = sd_parameters->denoising;
-
-    int suspected_inpaint =
-            (denoising != NULL) && 
-            !sd_parameters->hires_upscaler &&
-            !sd_parameters->hires_upscale  &&
-            !sd_parameters->hires_width;
+    const char* denoising;
     
-    if( suspected_inpaint ) {
-        if( !sd_parameters->inpaint_denoising ) {
-             sd_parameters->inpaint_denoising = denoising;
+    sd_parameters->model.has_info = 
+      ( sd_parameters->model.name != NULL ) ||
+      ( sd_parameters->model.hash != NULL );
+
+    sd_parameters->hires.has_info =
+      ( sd_parameters->hires.upscaler != NULL ) ||
+      ( sd_parameters->hires.steps    != NULL ) ||
+      ( sd_parameters->hires.upscale  != NULL ) ||
+      ( sd_parameters->hires.width    != NULL ) ||
+      ( sd_parameters->hires.height   != NULL );
+      
+    sd_parameters->inpaint.has_info = 
+      ( sd_parameters->inpaint.mask_blur != NULL );
+      
+    sd_parameters->settings.has_info =
+      ( sd_parameters->settings.eta       != NULL ) ||
+      ( sd_parameters->settings.ensd      != NULL ) ||
+      ( sd_parameters->settings.clip_skip != NULL );
+    
+    denoising = sd_parameters->denoising;
+    if( sd_parameters->inpaint.has_info ) {
+        if( !sd_parameters->inpaint.denoising ) {
+             sd_parameters->inpaint.denoising = denoising;
         }
-    } else {
-        if( !sd_parameters->hires_denoising ) {
-             sd_parameters->hires_denoising = denoising;
+    } else if( sd_parameters->hires.has_info ) {
+        if( !sd_parameters->hires.denoising ) {
+             sd_parameters->hires.denoising = denoising;
         }
     }
 }

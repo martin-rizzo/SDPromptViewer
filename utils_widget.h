@@ -155,11 +155,18 @@ show_group_ancestor(GtkWidget *widget) {
 }
 
 /**
- * hide_group_descendants - Hide all descendant whose ID ends with "_group".
- * @widget: the widget to start searching from.
+ * hide_descendants - Recursively hides widget children matching name suffix
+ * @widget: A widget to hide children from.
+ * @suffix: A suffix of the name of the children to hide or %NULL
+ *          to hide all children.
+ *
+ * This function is used to hide the children of a container widget that
+ * have a name suffix matching the provided @suffix. If @suffix is NULL,
+ * all children will be hidden. The function is recursive and will hide
+ * all descendants of the container widget that match the suffix.
  */
 static void
-hide_group_descendants(GtkWidget *widget) {
+hide_descendants(GtkWidget *widget, const gchar *suffix) {
     GList *children, *iter;
     GtkBuildable *buildable; GtkWidget *child; const gchar *child_id;
     if( GTK_IS_CONTAINER(widget) ) {
@@ -169,10 +176,10 @@ hide_group_descendants(GtkWidget *widget) {
             buildable = GTK_BUILDABLE( child );
             if( buildable ) {
                 child_id = gtk_buildable_get_name( buildable );
-                if( g_str_has_suffix( child_id, "_group") ) {
+                if( suffix==NULL || g_str_has_suffix( child_id, suffix ) ) {
                     gtk_widget_hide( child );
                 }
-                hide_group_descendants( child );
+                hide_descendants( child, suffix );
             }
         }
         g_list_free( children );

@@ -263,7 +263,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkFrame" id="config_group">
+                  <object class="GtkFrame" id="parameters_group">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="label-xalign">0</property>
