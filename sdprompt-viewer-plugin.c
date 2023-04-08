@@ -153,15 +153,73 @@ sdprompt_viewer_plugin_dispose( GObject *object )
     G_OBJECT_CLASS( sdprompt_viewer_plugin_parent_class )->dispose( object );
 }
 
+/*------------------------- SETTING WIDGET TEXT ---------------------------*/
+
+static void
+set_text( GtkBuilder  *builder,
+          const gchar *widget_name,
+          const gchar *text )
+{
+    GtkWidget *widget;
+    widget = builder ? get_widget( builder, widget_name ) : NULL;
+    if( widget ) {
+        set_widget_text( widget, text ? text : "", -1 );
+    }
+}
+
+static void
+set_text_box( GtkBuilder  *builder,
+              const gchar *widget_name,
+              const gchar *text )
+{
+    GtkWidget *widget_box;
+    widget_box = builder ? get_widget( builder, widget_name ) : NULL;
+    if( widget_box ) {
+        if( text ) { gtk_widget_show( widget_box ); }
+        else       { gtk_widget_hide( widget_box ); }
+        set_widget_text( widget_box, text ? text : "", -1 );
+    }
+}
+
+static void
+set_text_or_float( GtkBuilder  *builder,
+                   const gchar *widget_name,
+                   const gchar *text,
+                   float        float_value,
+                   int          number_of_decimals )
+{
+    if( text ) {
+        set_text(builder, widget_name, text);
+    } else {
+        gchar *str_value = NULL;
+        switch( number_of_decimals ) {
+            case 0:  str_value = g_strdup_printf("%.0f", float_value); break;
+            case 1:  str_value = g_strdup_printf("%.1f", float_value); break;
+            case 2:  str_value = g_strdup_printf("%.2f", float_value); break;
+            default: str_value = g_strdup_printf("%.3f", float_value); break;
+        }
+        if( str_value ) {
+            set_text( builder, widget_name, str_value );
+            g_free( str_value );
+        }
+    }
+}
+
 /*---------------------------- USER INTERFACE -----------------------------*/
 
 static void
 hide_all_widgets( GtkBuilder *builder, const gchar *suffix )
 {
     GtkWidget *main_container;
+    GList *children, *iter; GtkWidget *child;
+    
     main_container = builder ? get_widget( builder, "main_container" ) : NULL;
     if( main_container ) {
-        hide_descendants( main_container, suffix );
+        children = gtk_container_get_children( GTK_CONTAINER(main_container) );
+        for( iter = children ; iter ; iter = g_list_next(iter) ) {
+            child = GTK_WIDGET( iter->data );
+            gtk_widget_hide( child );
+        }
     }
 }
 
@@ -175,63 +233,6 @@ show_widget( GtkBuilder  *builder,
     if( widget ) {
         if( show ) { gtk_widget_show( widget ); }
         else       { gtk_widget_hide( widget ); }
-    }
-}
-
-static void
-set_widget( GtkBuilder  *builder,
-            const gchar *widget_name,
-            const gchar *str_value,
-            const gchar *str_default_value)
-{
-    GtkWidget *widget;
-    widget = builder ? get_widget( builder, widget_name ) : NULL;
-    if( widget ) {
-        set_widget_text( widget, str_value?str_value:str_default_value, -1 );
-    }
-}
-
-static void
-set_widgetf( GtkBuilder  *builder,
-             const gchar *widget_name,
-             float        value,
-             int          number_of_decimals)
-{
-    gchar *str_value;
-    switch( number_of_decimals ) {
-        case 0:  str_value = g_strdup_printf("%.0f", value); break;
-        case 1:  str_value = g_strdup_printf("%.1f", value); break;
-        case 2:  str_value = g_strdup_printf("%.2f", value); break;
-        default: str_value = g_strdup_printf("%.3f", value); break;
-    }
-    set_widget( builder, widget_name, str_value, "" );
-    g_free( str_value );
-}
-
-static void
-show_unknowns_parameters( GtkBuilder   *builder,
-                          SDParameters *parameters )
-{
-    int i;
-    static const gchar group_name[]  = "unknown_group";
-    static const gchar widget_name[] = "unknown_text_view";
-    GtkTextView   *text_view = builder ? GTK_TEXT_VIEW( get_widget(builder, widget_name) ) : NULL;
-    GtkTextBuffer *buffer    = text_view ? gtk_text_view_get_buffer( text_view ) : NULL;
-    if( !buffer ) { return; }
-    
-    gtk_text_buffer_set_text( buffer, "", -1 );
-    if( parameters->unknowns_count > 0 ) {
-        show_widget( builder, group_name, TRUE );
-        for( i=0; i<parameters->unknowns_count; ++i ) {
-            const char *key   = parameters->unknowns[i].key;
-            const char *value = parameters->unknowns[i].value;
-            gtk_text_buffer_insert_at_cursor( buffer,  key  , -1 );
-            gtk_text_buffer_insert_at_cursor( buffer,  ": " , -1 );
-            gtk_text_buffer_insert_at_cursor( buffer, value , -1 );
-            gtk_text_buffer_insert_at_cursor( buffer, "\n"  , -1 );
-        }        
-    } else {
-        show_widget( builder, group_name, FALSE );
     }
 }
 
@@ -255,22 +256,69 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
     if( !builder ) { return; }
     
     hide_all_widgets( builder, GROUP_SUFFIX );
-    set_widget( builder, widget_name, message, "" );
+    set_text( builder, widget_name, message );
     show_widget( builder, group_name, TRUE );
 }
 
 static void
 show_sd_parameters( SDPromptViewerPlugin *plugin,
-                    void                 *buffer,
-                    int                   buffer_size )
+                    void                 *data,
+                    int                   data_size )
 {
     SDParameters parameters;
+    GtkTextView *text_view; GtkTextBuffer *buffer; int i;
     GtkBuilder *b = plugin->sidebar_builder;
     if( !b ) { return; }
     
-    parse_sd_parameters_from_buffer( &parameters, buffer, buffer_size );
-    
     hide_all_widgets(b, GROUP_SUFFIX);
+    
+    parse_sd_parameters_from_buffer( &parameters, data, data_size );
+    set_text(b, "prompt_text_view"       , parameters.prompt            );
+    set_text(b, "negative_text_view"     , parameters.negative_prompt   );
+    set_text(b, "wildcard_text_view"     , parameters.wildcard_prompt   );
+    set_text(b, "model_entry"            , parameters.model.name        );
+    set_text(b, "model_hash_entry"       , parameters.model.hash        );
+    set_text(b, "sampler_entry"          , parameters.sampler           );
+    set_text(b, "steps_entry"            , parameters.steps             );
+    set_text(b, "cfg_scale_entry"        , parameters.cfg_scale         );
+    set_text(b, "seed_entry"             , parameters.seed              );
+    set_text(b, "width_entry"            , parameters.width             );
+    set_text(b, "height_entry"           , parameters.height            );
+    set_text(b, "hires_upscaler_entry"   , parameters.hires.upscaler    );
+    set_text(b, "hires_steps_entry"      , parameters.hires.steps       );
+    set_text(b, "hires_denoising_entry"  , parameters.hires.denoising   );    
+    set_text(b, "inpaint_denoising_entry", parameters.inpaint.denoising );
+    set_text(b, "inpaint_mask_blur_entry", parameters.inpaint.mask_blur );
+    
+    set_text_box(b, "eta_box"      , parameters.settings.eta       );
+    set_text_box(b, "ensd_box"     , parameters.settings.ensd      );
+    set_text_box(b, "clip_skip_box", parameters.settings.clip_skip );
+    
+    set_text_or_float(b, "hires_width_entry",
+                      parameters.hires.width,
+                      parameters.hires.calc_width,0);
+    set_text_or_float(b, "hires_height_entry",
+                      parameters.hires.height,
+                      parameters.hires.calc_height,0);
+    set_text_or_float(b, "hires_upscale_entry",
+                      parameters.hires.upscale,
+                      parameters.hires.calc_upscale,2);
+    
+    text_view = GTK_TEXT_VIEW( get_widget(b, "unknown_text_view") );
+    buffer    = text_view ? gtk_text_view_get_buffer( text_view ) : NULL;
+    if( buffer ) {
+        show_widget( b, "unknown_group", parameters.unknowns_count > 0 );
+        gtk_text_buffer_set_text( buffer, "", -1 );
+        for( i=0; i<parameters.unknowns_count; ++i ) {
+            const char *key   = parameters.unknowns[i].key;
+            const char *value = parameters.unknowns[i].value;
+            gtk_text_buffer_insert_at_cursor( buffer,  key  , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer,  ": " , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer, value , -1 );
+            gtk_text_buffer_insert_at_cursor( buffer, "\n"  , -1 );
+        }        
+    }
+    
     show_widget(b, "prompt_group"    , parameters.prompt!=NULL          );
     show_widget(b, "negative_group"  , parameters.negative_prompt!=NULL ); 
     show_widget(b, "wildcard_group"  , parameters.wildcard_prompt!=NULL );
@@ -279,43 +327,6 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
     show_widget(b, "hires_group"     , parameters.hires.has_info        );
     show_widget(b, "inpaint_group"   , parameters.inpaint.has_info      );
     show_widget(b, "settings_group"  , parameters.settings.has_info     );
-    
-    set_widget(b, "prompt_text_view"       ,parameters.prompt            ,"");
-    set_widget(b, "negative_text_view"     ,parameters.negative_prompt   ,"");
-    set_widget(b, "wildcard_text_view"     ,parameters.wildcard_prompt   ,"");
-    set_widget(b, "model_entry"            ,parameters.model.name        ,"");
-    set_widget(b, "model_hash_entry"       ,parameters.model.hash        ,"");
-    set_widget(b, "sampler_entry"          ,parameters.sampler           ,"");
-    set_widget(b, "steps_entry"            ,parameters.steps             ,"");
-    set_widget(b, "cfg_scale_entry"        ,parameters.cfg_scale         ,"");
-    set_widget(b, "seed_entry"             ,parameters.seed              ,"");
-    set_widget(b, "width_entry"            ,parameters.width             ,"");
-    set_widget(b, "height_entry"           ,parameters.height            ,"");
-    set_widget(b, "hires_upscaler_entry"   ,parameters.hires.upscaler    ,"");
-    set_widget(b, "hires_steps_entry"      ,parameters.hires.steps       ,"");
-    set_widget(b, "hires_denoising_entry"  ,parameters.hires.denoising   ,"");    
-    set_widget(b, "inpaint_denoising_entry",parameters.inpaint.denoising ,"");
-    set_widget(b, "inpaint_mask_blur_entry",parameters.inpaint.mask_blur ,"");
-    set_widget(b, "eta_entry"              ,parameters.settings.eta      ,"");
-    set_widget(b, "ensd_entry"             ,parameters.settings.ensd     ,"");
-    set_widget(b, "clip_skip_entry"        ,parameters.settings.clip_skip,"");
-    
-    if( parameters.hires.width )
-    { set_widget(b,"hires_width_entry" ,parameters.hires.width ,""); }
-    else
-    { set_widgetf(b,"hires_width_entry", parameters.hires.calc_width,0); }
-    
-    if( parameters.hires.height )
-    { set_widget(b,"hires_height_entry", parameters.hires.height, ""); }
-    else
-    { set_widgetf(b,"hires_height_entry", parameters.hires.calc_height,0); }
-
-    if( parameters.hires.upscale )
-    { set_widget(b,"hires_upscale_entry", parameters.hires.upscale, ""); }
-    else
-    { set_widgetf(b,"hires_upscale_entry", parameters.hires.calc_upscale,2); }
-    
-    show_unknowns_parameters(b, &parameters);
     
     if( plugin->force_visibility ) {
         EogWindow *window  = plugin->window;

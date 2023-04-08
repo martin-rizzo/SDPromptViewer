@@ -58,6 +58,36 @@ ensure_valid_utf8( const char *text, int max_bytes ) {
            max_bytes>=0 ? g_strndup( text, max_bytes ) : g_strdup( text );
 }
 
+static void
+set_widget_text_(GtkWidget *widget, const char *text, int max_bytes, int depth) {
+    GtkTextBuffer *buffer; gchar *utf8_text;
+    
+    if( GTK_IS_LABEL(widget) && depth==0 ) {
+        utf8_text = ensure_valid_utf8( text, max_bytes );
+        gtk_label_set_text( GTK_LABEL(widget), utf8_text );
+        g_free( utf8_text );
+    }
+    else if( GTK_IS_ENTRY(widget) ) {
+        utf8_text = ensure_valid_utf8( text, max_bytes );
+        gtk_entry_set_text( GTK_ENTRY(widget), utf8_text );
+        g_free( utf8_text );
+    }
+    else if( GTK_IS_TEXT_VIEW(widget) ) {
+        utf8_text = ensure_valid_utf8( text, max_bytes );
+        buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
+        if( buffer ) { gtk_text_buffer_set_text( buffer, utf8_text, -1 ); }
+        g_free( utf8_text );
+    }    
+    else if( GTK_IS_CONTAINER(widget) ) {
+        GList *children, *iter; GtkWidget *child;
+        children = gtk_container_get_children( GTK_CONTAINER(widget) );
+        for( iter = children ; iter ; iter = g_list_next(iter) ) {
+            child = GTK_WIDGET( iter->data );
+            set_widget_text_( child, text, max_bytes, depth+1 );
+        }
+    }
+}
+
 /**
  * set_widget_text - Sets the text of a widget.
  * @widget:    The widget to set the text of.
@@ -71,19 +101,7 @@ ensure_valid_utf8( const char *text, int max_bytes ) {
  */
 static void
 set_widget_text(GtkWidget *widget, const char *text, int max_bytes) {
-    GtkTextBuffer *buffer;
-    gchar *utf8_text = ensure_valid_utf8( text, max_bytes );
-    if( GTK_IS_LABEL(widget) ) {
-        gtk_label_set_text( GTK_LABEL(widget), utf8_text );
-    }
-    else if( GTK_IS_ENTRY(widget) ) {
-        gtk_entry_set_text( GTK_ENTRY(widget), utf8_text );
-    }
-    else if( GTK_IS_TEXT_VIEW(widget) ) {
-        buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
-        gtk_text_buffer_set_text( buffer, utf8_text, -1 );
-    }    
-    g_free(utf8_text);
+    set_widget_text_( widget, text, max_bytes, 0 );
 }
 
 /**
