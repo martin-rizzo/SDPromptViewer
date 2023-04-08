@@ -140,7 +140,6 @@
                           <object class="GtkTextView" id="prompt_text_view">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="opacity">0.69999999999999996</property>
                             <property name="editable">False</property>
                             <property name="wrap-mode">word</property>
                           </object>
@@ -181,7 +180,6 @@
                           <object class="GtkTextView" id="negative_text_view">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="opacity">0.69999999999999996</property>
                             <property name="editable">False</property>
                             <property name="wrap-mode">word</property>
                           </object>
@@ -222,7 +220,6 @@
                           <object class="GtkTextView" id="wildcard_text_view">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="opacity">0.69999999999999996</property>
                             <property name="editable">False</property>
                             <property name="wrap-mode">word</property>
                           </object>
@@ -245,18 +242,6 @@
                     <property name="fill">True</property>
                     <property name="padding">4</property>
                     <property name="position">5</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkSeparator">
-                    <property name="visible">True</property>
-                    <property name="can-focus">False</property>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
-                    <property name="padding">12</property>
-                    <property name="position">6</property>
                   </packing>
                 </child>
                 <child>
@@ -1106,6 +1091,9 @@
                     <property name="position">12</property>
                   </packing>
                 </child>
+                <style>
+                  <class name="sdpromptviewer"/>
+                </style>
               </object>
               <packing>
                 <property name="expand">False</property>

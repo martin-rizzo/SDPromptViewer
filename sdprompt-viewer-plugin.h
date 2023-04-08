@@ -90,10 +90,11 @@ struct         _SDPromptViewerPlugin
 {
     PeasExtensionBase parent_instance;
 
-    EogWindow     *window;
-    EogThumbView  *thumbview;
-    GtkBuilder    *sidebar_builder;
-    GtkWidget     *gtkbuilder_widget;
+    EogWindow        *window;
+    EogThumbView     *thumbview;
+    GtkCssProvider   *css_provider;
+    GtkBuilder       *sidebar_builder;
+    GtkWidget        *gtkbuilder_widget;
     
     /* Properties */
     gboolean show_unknown_params;

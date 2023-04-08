@@ -361,8 +361,23 @@ on_activate( EogWindowActivatable *activatable )
     GSettings *settings;
     GtkWidget *thumbview;
     GtkWidget *sidebar;
+    GdkScreen *screen;
     GError* error = NULL;
-
+    
+    /*-- add CSS styles --*/
+    plugin->css_provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(plugin->css_provider,
+        ".sdpromptviewer textview { font-size: 110%; } \n"
+        /* ".sdpromptviewer entry { background: #669999; } \n" */
+        /* ".sdpromptviewer textview text { font: 15px \"Monospace\"; background: #886600; } \n" */
+        , -1, NULL);
+    screen = gdk_screen_get_default();
+    if( screen ) {
+        gtk_style_context_add_provider_for_screen(
+            screen, GTK_STYLE_PROVIDER( plugin->css_provider ),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION );
+    }
+    
     settings  = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
     thumbview = eog_window_get_thumb_view( window );
     sidebar   = eog_window_get_sidebar( window );
@@ -375,18 +390,20 @@ on_activate( EogWindowActivatable *activatable )
                           plugin );
 
 
-    plugin->sidebar_builder = gtk_builder_new ();
-    gtk_builder_set_translation_domain (plugin->sidebar_builder,
-                        GETTEXT_PACKAGE);
-    if (!gtk_builder_add_from_resource (plugin->sidebar_builder,
-                        PLUGIN_UI, &error))
-    {
-        g_warning ("Couldn't load UI resource: %s", error->message);
-        g_error_free (error);
+    /*-- build the user interface --*/
+    plugin->sidebar_builder = gtk_builder_new();
+    gtk_builder_set_translation_domain( plugin->sidebar_builder,
+                                        GETTEXT_PACKAGE );
+    if( !gtk_builder_add_from_resource( plugin->sidebar_builder,
+                                        PLUGIN_UI,
+                                        &error) ) {
+        g_warning( "Couldn't load UI resource: %s", error->message );
+        g_error_free( error );
     }
-    plugin->gtkbuilder_widget = GTK_WIDGET (gtk_builder_get_object (plugin->sidebar_builder, "viewport1"));
+    plugin->gtkbuilder_widget = get_widget( plugin->sidebar_builder, "viewport1" );
 
-    eog_sidebar_add_page( EOG_SIDEBAR (sidebar),
+    /*-- add the user interface to the sidebar */
+    eog_sidebar_add_page( EOG_SIDEBAR( sidebar ),
                           _("Stable Diffusion Parameters"),
                           plugin->gtkbuilder_widget );
     gtk_widget_show_all( plugin->gtkbuilder_widget );
@@ -404,8 +421,9 @@ on_activate( EogWindowActivatable *activatable )
     /*-- force update display for first time --*/
     on_selection_changed(plugin->thumbview, plugin);
 
+    /*-- clean up --*/
+    if( settings ) { g_object_unref( settings ); }
     
-    g_object_unref (settings);
 }
 
 static void
@@ -413,18 +431,36 @@ on_deactivate( EogWindowActivatable *activatable )
 {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
     GtkWidget *sidebar, *thumbview;
+    GdkScreen *screen;
 
+    /*-- remove CSS styles --*/
+    screen = gdk_screen_get_default();
+    if( screen ) {
+        gtk_style_context_remove_provider_for_screen(
+            screen, GTK_STYLE_PROVIDER(plugin->css_provider) );
+    }
+    
+    /*-- restore sidebar minimum width --*/
     set_sidebar_minimum_width( plugin, -1 );
 
-    sidebar = eog_window_get_sidebar (plugin->window);
-    eog_sidebar_remove_page(EOG_SIDEBAR (sidebar),
-                plugin->gtkbuilder_widget);
+    /*-- remove the user interface from the sidebar --*/
+    sidebar = eog_window_get_sidebar( plugin->window );
+    eog_sidebar_remove_page( EOG_SIDEBAR( sidebar ),
+                             plugin->gtkbuilder_widget );
 
-    thumbview = eog_window_get_thumb_view (plugin->window);
-    g_signal_handler_disconnect (thumbview, plugin->selection_changed_id);
-
-    g_object_unref (plugin->sidebar_builder);
-    plugin->sidebar_builder = NULL;
+    /*-- remove selection changed signal --*/
+    thumbview = eog_window_get_thumb_view( plugin->window );
+    g_signal_handler_disconnect( thumbview, plugin->selection_changed_id) ;
+    
+    
+    if( plugin->sidebar_builder ) {
+        g_object_unref( plugin->sidebar_builder );
+        plugin->sidebar_builder = NULL;
+    }
+    if( plugin->css_provider ) {
+        g_object_unref( plugin->css_provider );
+        plugin->css_provider = NULL;
+    }
 }
 
 static void
