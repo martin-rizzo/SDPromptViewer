@@ -50,8 +50,6 @@
 #include "sdprompt-viewer-plugin.h"
 #include "sdprompt-viewer-preferences.h"
 
-static const gchar GROUP_SUFFIX[] = "_group";
-
 static void
 eog_window_activatable_iface_init (EogWindowActivatableInterface *iface);
 static void
@@ -153,62 +151,10 @@ sdprompt_viewer_plugin_dispose( GObject *object )
     G_OBJECT_CLASS( sdprompt_viewer_plugin_parent_class )->dispose( object );
 }
 
-/*------------------------- SETTING WIDGET TEXT ---------------------------*/
+/*-------------------- CONTROLLING THE USER INTERFACE ---------------------*/
 
 static void
-set_text( GtkBuilder  *builder,
-          const gchar *widget_name,
-          const gchar *text )
-{
-    GtkWidget *widget;
-    widget = builder ? get_widget( builder, widget_name ) : NULL;
-    if( widget ) {
-        set_widget_text( widget, text ? text : "", -1 );
-    }
-}
-
-static void
-set_text_box( GtkBuilder  *builder,
-              const gchar *widget_name,
-              const gchar *text )
-{
-    GtkWidget *widget_box;
-    widget_box = builder ? get_widget( builder, widget_name ) : NULL;
-    if( widget_box ) {
-        if( text ) { gtk_widget_show( widget_box ); }
-        else       { gtk_widget_hide( widget_box ); }
-        set_widget_text( widget_box, text ? text : "", -1 );
-    }
-}
-
-static void
-set_text_or_float( GtkBuilder  *builder,
-                   const gchar *widget_name,
-                   const gchar *text,
-                   float        float_value,
-                   int          number_of_decimals )
-{
-    if( text ) {
-        set_text(builder, widget_name, text);
-    } else {
-        gchar *str_value = NULL;
-        switch( number_of_decimals ) {
-            case 0:  str_value = g_strdup_printf("%.0f", float_value); break;
-            case 1:  str_value = g_strdup_printf("%.1f", float_value); break;
-            case 2:  str_value = g_strdup_printf("%.2f", float_value); break;
-            default: str_value = g_strdup_printf("%.3f", float_value); break;
-        }
-        if( str_value ) {
-            set_text( builder, widget_name, str_value );
-            g_free( str_value );
-        }
-    }
-}
-
-/*---------------------------- USER INTERFACE -----------------------------*/
-
-static void
-hide_all_widgets( GtkBuilder *builder, const gchar *suffix )
+hide_all_widgets( GtkBuilder  *builder )
 {
     GtkWidget *main_container;
     GList *children, *iter; GtkWidget *child;
@@ -243,7 +189,7 @@ show_spinner( SDPromptViewerPlugin *plugin )
     GtkBuilder *builder = plugin->sidebar_builder;
     if( !builder ) { return; }
 
-    hide_all_widgets( builder, GROUP_SUFFIX );
+    hide_all_widgets( builder );
     show_widget( builder, group_name, TRUE );
 }
 
@@ -255,8 +201,8 @@ show_message( SDPromptViewerPlugin *plugin, const gchar *message )
     GtkBuilder *builder = plugin->sidebar_builder;
     if( !builder ) { return; }
     
-    hide_all_widgets( builder, GROUP_SUFFIX );
-    set_text( builder, widget_name, message );
+    hide_all_widgets( builder );
+    display_text( builder, widget_name, message );
     show_widget( builder, group_name, TRUE );
 }
 
@@ -270,37 +216,37 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
     GtkBuilder *b = plugin->sidebar_builder;
     if( !b ) { return; }
     
-    hide_all_widgets(b, GROUP_SUFFIX);
+    hide_all_widgets( b );
     
     parse_sd_parameters_from_buffer( &parameters, data, data_size );
-    set_text(b, "prompt_text_view"       , parameters.prompt            );
-    set_text(b, "negative_text_view"     , parameters.negative_prompt   );
-    set_text(b, "wildcard_text_view"     , parameters.wildcard_prompt   );
-    set_text(b, "model_entry"            , parameters.model.name        );
-    set_text(b, "model_hash_entry"       , parameters.model.hash        );
-    set_text(b, "sampler_entry"          , parameters.sampler           );
-    set_text(b, "steps_entry"            , parameters.steps             );
-    set_text(b, "cfg_scale_entry"        , parameters.cfg_scale         );
-    set_text(b, "seed_entry"             , parameters.seed              );
-    set_text(b, "width_entry"            , parameters.width             );
-    set_text(b, "height_entry"           , parameters.height            );
-    set_text(b, "hires_upscaler_entry"   , parameters.hires.upscaler    );
-    set_text(b, "hires_steps_entry"      , parameters.hires.steps       );
-    set_text(b, "hires_denoising_entry"  , parameters.hires.denoising   );    
-    set_text(b, "inpaint_denoising_entry", parameters.inpaint.denoising );
-    set_text(b, "inpaint_mask_blur_entry", parameters.inpaint.mask_blur );
+    display_text(b, "prompt_text_view"       , parameters.prompt            );
+    display_text(b, "negative_text_view"     , parameters.negative_prompt   );
+    display_text(b, "wildcard_text_view"     , parameters.wildcard_prompt   );
+    display_text(b, "model_entry"            , parameters.model.name        );
+    display_text(b, "model_hash_entry"       , parameters.model.hash        );
+    display_text(b, "sampler_entry"          , parameters.sampler           );
+    display_text(b, "steps_entry"            , parameters.steps             );
+    display_text(b, "cfg_scale_entry"        , parameters.cfg_scale         );
+    display_text(b, "seed_entry"             , parameters.seed              );
+    display_text(b, "width_entry"            , parameters.width             );
+    display_text(b, "height_entry"           , parameters.height            );
+    display_text(b, "hires_upscaler_entry"   , parameters.hires.upscaler    );
+    display_text(b, "hires_steps_entry"      , parameters.hires.steps       );
+    display_text(b, "hires_denoising_entry"  , parameters.hires.denoising   );    
+    display_text(b, "inpaint_denoising_entry", parameters.inpaint.denoising );
+    display_text(b, "inpaint_mask_blur_entry", parameters.inpaint.mask_blur );
     
-    set_text_box(b, "eta_box"      , parameters.settings.eta       );
-    set_text_box(b, "ensd_box"     , parameters.settings.ensd      );
-    set_text_box(b, "clip_skip_box", parameters.settings.clip_skip );
+    display_text_box(b, "eta_box"      , parameters.settings.eta       );
+    display_text_box(b, "ensd_box"     , parameters.settings.ensd      );
+    display_text_box(b, "clip_skip_box", parameters.settings.clip_skip );
     
-    set_text_or_float(b, "hires_width_entry",
+    display_text_or_float(b, "hires_width_entry",
                       parameters.hires.width,
                       parameters.hires.calc_width,0);
-    set_text_or_float(b, "hires_height_entry",
+    display_text_or_float(b, "hires_height_entry",
                       parameters.hires.height,
                       parameters.hires.calc_height,0);
-    set_text_or_float(b, "hires_upscale_entry",
+    display_text_or_float(b, "hires_upscale_entry",
                       parameters.hires.upscale,
                       parameters.hires.calc_upscale,2);
     

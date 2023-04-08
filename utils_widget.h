@@ -32,6 +32,16 @@
 #include <gtk/gtk.h>
 
 /**
+ * get_widget - Retrieves a widget with the specified name.
+ * @builder:     a GtkBuilder object
+ * @widget_name: the name of the widget to retrieve from the builder
+ *
+ * Returns: a GtkWidget pointer to the requested widget.
+ **/
+#define get_widget(builder, widget_name) \
+    GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) )
+
+/**
  * ensure_valid_utf8 - Converts a string to valid UTF-8 format.
  * @text:      a string of possibly invalid utf8 text.
  * @max_bytes: the max bytes to convert, or -1 to go until NUL.
@@ -104,114 +114,94 @@ set_widget_text(GtkWidget *widget, const char *text, int max_bytes) {
     set_widget_text_( widget, text, max_bytes, 0 );
 }
 
+/*---------------------------- DISPLAYING TEXT ----------------------------*/
+
 /**
- * clear_widget_text - Clears the text content of a widget.
- * @widget: the #GtkWidget to clear the text content of.
+ * display_text - Sets text of specified widget retrieved from GtkBuilder.
+ * @builder:     A pointer to the GtkBuilder object that contains the widget.
+ * @widget_name: The name of the widget to set the text of.
+ * @text:        A string to set as the widget's text.
+ * 
+ * Sets the text of the specified widget to the provided @text. If @text is
+ * NULL, an empty string is used instead. If the text contains invalid UTF-8
+ * sequences, it will be automatically converted to a valid UTF-8 string
+ * using the most appropriate method.
  */
 static void
-clear_widget_text(GtkWidget *widget) {
-    GtkTextBuffer *buffer;
-    if( GTK_IS_LABEL(widget) ) {
-        gtk_label_set_text( GTK_LABEL(widget), "");
-    }
-    else if( GTK_IS_ENTRY(widget) ) {
-        gtk_entry_set_text( GTK_ENTRY(widget), "" );
-    }
-    else if( GTK_IS_TEXT_VIEW(widget) ) {
-        buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(widget) );
-        gtk_text_buffer_set_text( buffer, "", -1 );
-    }
-}
-
-static void
-clear_descendants_text(GtkWidget *widget, gboolean include_labels) {
-    GList *children, *iter; GtkWidget *child; GtkTextBuffer *buffer;
-    if( GTK_IS_CONTAINER(widget) ) {
-        children = gtk_container_get_children( GTK_CONTAINER(widget) );
-        for( iter = children ; iter ; iter = g_list_next(iter) ) {
-            child = GTK_WIDGET( iter->data );
-            if( GTK_IS_LABEL(child) ) {
-                if( include_labels ) {
-                    gtk_label_set_text( GTK_LABEL(child), "" );
-                }
-            }
-            else if( GTK_IS_ENTRY(child) ) {
-                gtk_entry_set_text( GTK_ENTRY(child), "" );
-            }
-            else if( GTK_IS_TEXT_VIEW(child) ) {
-                buffer = gtk_text_view_get_buffer( GTK_TEXT_VIEW(child) );
-                if( buffer ) { gtk_text_buffer_set_text( buffer, "", -1 ); }
-            }
-            else {
-                clear_descendants_text( child, include_labels );
-            }
-        }
-        g_list_free( children );
-    }    
-}
-
-
-/**
- * show_group_ancestor - Make visible the ancestor whose ID ends with "_group".
- * @widget: The starting widget to search from.
- */
-static void
-show_group_ancestor(GtkWidget *widget) {
-    GtkBuildable *buildable; GtkWidget *parent; const gchar *parent_id;
-    parent = widget;
-    while( parent ) {
-        buildable = GTK_BUILDABLE( parent );
-        if( buildable ) {
-            parent_id = gtk_buildable_get_name( buildable );
-            if( g_str_has_suffix(parent_id, "_group") ) {
-                gtk_widget_show( parent );
-                return;
-            }
-        }
-        parent = gtk_widget_get_parent( parent );
+display_text( GtkBuilder  *builder,
+              const gchar *widget_name,
+              const gchar *text )
+{
+    GtkWidget *widget;
+    widget = builder ? get_widget( builder, widget_name ) : NULL;
+    if( widget ) {
+        set_widget_text( widget, text ? text : "", -1 );
     }
 }
 
 /**
- * hide_descendants - Recursively hides widget children matching name suffix
- * @widget: A widget to hide children from.
- * @suffix: A suffix of the name of the children to hide or %NULL
- *          to hide all children.
+ * display_text_box - Sets text of a widget, optionally showing or hiding it.
+ * @builder:     A pointer to the GtkBuilder object that contains the widget.
+ * @widget_name: The name of the widget to set the text of.
+ * @text:        A string to set as the widget's text.
  *
- * This function is used to hide the children of a container widget that
- * have a name suffix matching the provided @suffix. If @suffix is NULL,
- * all children will be hidden. The function is recursive and will hide
- * all descendants of the container widget that match the suffix.
+ * Sets the text of the specified widget to the provided @text. The widget is
+ * shown or hidden based on whether @text is NULL or not. If the text contains
+ * invalid UTF-8 sequences, it will be automatically converted to a valid
+ * UTF-8 string using the most appropriate method.
  */
 static void
-hide_descendants(GtkWidget *widget, const gchar *suffix) {
-    GList *children, *iter;
-    GtkBuildable *buildable; GtkWidget *child; const gchar *child_id;
-    if( GTK_IS_CONTAINER(widget) ) {
-        children = gtk_container_get_children( GTK_CONTAINER(widget) );
-        for( iter = children ; iter ; iter = g_list_next(iter) ) {
-            child     = GTK_WIDGET( iter->data );
-            buildable = GTK_BUILDABLE( child );
-            if( buildable ) {
-                child_id = gtk_buildable_get_name( buildable );
-                if( suffix==NULL || g_str_has_suffix( child_id, suffix ) ) {
-                    gtk_widget_hide( child );
-                }
-                hide_descendants( child, suffix );
-            }
-        }
-        g_list_free( children );
+display_text_box( GtkBuilder  *builder,
+                  const gchar *widget_name,
+                  const gchar *text )
+{
+    GtkWidget *widget_box;
+    widget_box = builder ? get_widget( builder, widget_name ) : NULL;
+    if( widget_box ) {
+        if( text ) { gtk_widget_show( widget_box ); }
+        else       { gtk_widget_hide( widget_box ); }
+        set_widget_text( widget_box, text ? text : "", -1 );
     }
 }
 
-
 /**
- * get_widget - Retrieves a widget with the specified name.
- * @builder:     a GtkBuilder object
- * @widget_name: the name of the widget to retrieve from the builder
+ * display_text_or_float - Sets text of widget to string or float.
+ * @builder:      A pointer to the GtkBuilder object that contains the widget.
+ * @widget_name:  The name of the widget to set the text of.
+ * @text:         A string to set as the widget's text.
+ * @float_value:  The floating-point value to display if @text is NULL.
+ * @num_decimals: The number of decimal places to display for the float value.
  *
- * Returns: a GtkWidget pointer to the requested widget.
- **/
-#define get_widget(builder, widget_name) \
-    GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) )
-
+ * This function sets the text of the specified widget to either the @text 
+ * string or a string representation of the @float_value.
+ * If the @text argument is not NULL, it will be used as the widget's text.
+ * If the @text argument is NULL, a string representation of the @float_value
+ * will be used instead.
+ * The @num_decimals argument determines the number of decimal places to
+ * include in the string representation of the @float_value.
+ * If the @text argument contains invalid UTF-8 sequences, they will be
+ * converted to a valid UTF-8 string using the most appropriate method.
+ */ 
+static void
+display_text_or_float( GtkBuilder  *builder,
+                       const gchar *widget_name,
+                       const gchar *text,
+                       float        float_value,
+                       int          num_decimals )
+{
+    if( text ) {
+        display_text( builder, widget_name, text );
+    } else {
+        gchar *str_value = NULL;
+        switch( num_decimals ) {
+            case 0:  str_value = g_strdup_printf("%.0f", float_value); break;
+            case 1:  str_value = g_strdup_printf("%.1f", float_value); break;
+            case 2:  str_value = g_strdup_printf("%.2f", float_value); break;
+            default: str_value = g_strdup_printf("%.3f", float_value); break;
+        }
+        if( str_value ) {
+            display_text( builder, widget_name, str_value );
+            g_free( str_value );
+        }
+    }
+}
