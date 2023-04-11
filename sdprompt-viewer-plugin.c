@@ -30,6 +30,7 @@
 
 */
 #include "eog/eog-window.h"
+#include "gtk/gtkcssprovider.h"
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -366,11 +367,8 @@ on_activate( EogWindowActivatable *activatable )
     
     /*-- add CSS styles --*/
     plugin->css_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(plugin->css_provider,
-        ".sdpromptviewer textview { font-size: 110%; } \n"
-        /* ".sdpromptviewer entry { background: #669999; } \n" */
-        /* ".sdpromptviewer textview text { font: 15px \"Monospace\"; background: #886600; } \n" */
-        , -1, NULL);
+    gtk_css_provider_load_from_resource(
+        plugin->css_provider, RES_DEFAULT_CSS);
     screen = gdk_screen_get_default();
     if( screen ) {
         gtk_style_context_add_provider_for_screen(
@@ -395,7 +393,7 @@ on_activate( EogWindowActivatable *activatable )
     gtk_builder_set_translation_domain( plugin->sidebar_builder,
                                         GETTEXT_PACKAGE );
     if( !gtk_builder_add_from_resource( plugin->sidebar_builder,
-                                        PLUGIN_UI,
+                                        RES_PLUGIN_UI,
                                         &error) ) {
         g_warning( "Couldn't load UI resource: %s", error->message );
         g_error_free( error );

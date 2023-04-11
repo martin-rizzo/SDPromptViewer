@@ -39,5 +39,7 @@
 #define     SETTINGS_FORCE_VISIBILITY       "force-visibility"
 
 /* FILE: resources.xml */
-#define PREFERENCES_UI "/dev/martin-rizzo/sdprompt-viewer/sdprompt-viewer-preferences.ui"
-#define PLUGIN_UI      "/dev/martin-rizzo/sdprompt-viewer/sdprompt-viewer-plugin.ui"
+#define RES_PREFIX "/dev/martin-rizzo/sdprompt-viewer"
+#define RES_PREFERENCES_UI RES_PREFIX"/sdprompt-viewer-preferences.ui"
+#define RES_PLUGIN_UI      RES_PREFIX"/sdprompt-viewer-plugin.ui"
+#define RES_DEFAULT_CSS    RES_PREFIX"/themes/default.css"

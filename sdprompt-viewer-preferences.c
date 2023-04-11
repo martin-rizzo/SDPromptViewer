@@ -122,7 +122,7 @@ create_user_interface( PeasGtkConfigurable *configurable )
 
     config_builder = gtk_builder_new ();
     gtk_builder_set_translation_domain (config_builder, GETTEXT_PACKAGE);
-    if (!gtk_builder_add_objects_from_resource (config_builder, PREFERENCES_UI, object_ids, &error))
+    if (!gtk_builder_add_objects_from_resource (config_builder, RES_PREFERENCES_UI, object_ids, &error))
     {
         g_warning ("Couldn't load UI resource: %s", error->message);
         g_error_free (error);
@@ -137,7 +137,7 @@ create_user_interface( PeasGtkConfigurable *configurable )
     force_width_check_button = get_widget( config_builder, "force_width_check_button" );
     force_width_spin_button  = get_widget( config_builder, "force_width_spin_button" );
     
-    gtk_spin_button_configure( force_width_spin_button,
+    gtk_spin_button_configure( GTK_SPIN_BUTTON(force_width_spin_button),
                                gtk_adjustment_new(480,100,1000,5,50,0), 1, 0);
 
     g_settings_bind( settings, SETTINGS_FORCE_VISIBILITY,
