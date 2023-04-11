@@ -31,6 +31,7 @@
 */
 #include "eog/eog-window.h"
 #include "gtk/gtkcssprovider.h"
+#include "libpeas-gtk/peas-gtk-configurable.h"
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -152,6 +153,54 @@ sdprompt_viewer_plugin_dispose( GObject *object )
     G_OBJECT_CLASS( sdprompt_viewer_plugin_parent_class )->dispose( object );
 }
 
+/*--------------------  ---------------------*/
+
+static void
+set_image_generation_data( SDPromptViewerPlugin *plugin,
+                           const gchar          *data,
+                           int                   max_bytes )
+{
+    if( plugin->image_generation_data ) {
+        g_free( plugin->image_generation_data );
+        plugin->image_generation_data = NULL;
+    }
+    if( max_bytes!=0 && data!=NULL && data[0]!='\0' ) {
+        if( max_bytes<0 ) { max_bytes = strlen( data ); }
+        plugin->image_generation_data   = g_strndup( data, max_bytes );
+        plugin->image_generation_length = max_bytes;
+    }
+}
+
+static void
+set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
+                           gint                  min_width)
+{
+    EogWindow *window  = plugin->window;
+    GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
+    if( !sidebar ) { return; }
+
+    /* store original minimum size */
+    if( min_width >= 0 ) {
+        if( !plugin->sidebar_min_stored ) {
+             plugin->sidebar_min_stored = TRUE;
+            gtk_widget_get_size_request(
+                sidebar, &plugin->sidebar_min_width, &plugin->sidebar_min_height );
+        }
+    }
+    /* restore original minimum size */
+    else {
+        if( plugin->sidebar_min_stored ) {
+            plugin->sidebar_min_stored = FALSE;
+            gtk_widget_set_size_request(
+                sidebar, plugin->sidebar_min_width, plugin->sidebar_min_height );
+        }
+    }
+    /* if the original minimum size is stored then apply the new one */
+    if( plugin->sidebar_min_stored ) {
+        gtk_widget_set_size_request( sidebar, min_width, plugin->sidebar_min_height );
+    }
+}
+
 /*-------------------- CONTROLLING THE USER INTERFACE ---------------------*/
 
 static void
@@ -186,40 +235,43 @@ show_widget( GtkBuilder  *builder,
 static void
 show_spinner( SDPromptViewerPlugin *plugin )
 {
-    static const gchar group_name[]  = "loading_group";
     GtkBuilder *builder = plugin->sidebar_builder;
     if( !builder ) { return; }
-
     hide_all_widgets( builder );
-    show_widget( builder, group_name, TRUE );
+    show_widget( builder, "loading_group", TRUE );
 }
 
 static void
-show_message( SDPromptViewerPlugin *plugin, const gchar *message )
+show_message( SDPromptViewerPlugin *plugin,
+              const gchar          *message )
 {
-    static const gchar group_name[]  = "message_group";
-    static const gchar widget_name[] = "message_label";
     GtkBuilder *builder = plugin->sidebar_builder;
     if( !builder ) { return; }
-    
     hide_all_widgets( builder );
-    display_text( builder, widget_name, message );
-    show_widget( builder, group_name, TRUE );
+    display_text( builder , "message_label", message );
+    show_widget( builder  , "message_group", TRUE    );
 }
 
 static void
-show_sd_parameters( SDPromptViewerPlugin *plugin,
-                    void                 *data,
-                    int                   data_size )
+show_image_generation_data( SDPromptViewerPlugin *plugin )
 {
     SDParameters parameters;
     GtkTextView *text_view; GtkTextBuffer *buffer; int i;
     GtkBuilder *b = plugin->sidebar_builder;
     if( !b ) { return; }
+        
+    /* If no generation data is present, show a message and return */
+    if( !plugin->image_generation_data ) {
+        show_message( plugin,
+                      "No Stable Diffusion parameters found in the image." );
+        return;
+    }
+    
+    parse_sd_parameters_from_buffer( &parameters,
+                                     plugin->image_generation_data,
+                                     plugin->image_generation_length );
     
     hide_all_widgets( b );
-    
-    parse_sd_parameters_from_buffer( &parameters, data, data_size );
     display_text(b, "prompt_text_view"       , parameters.prompt            );
     display_text(b, "negative_text_view"     , parameters.negative_prompt   );
     display_text(b, "wildcard_text_view"     , parameters.wildcard_prompt   );
@@ -266,6 +318,7 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
         }        
     }
     
+    show_widget(b, "buttons_group"   , TRUE                             );
     show_widget(b, "prompt_group"    , parameters.prompt!=NULL          );
     show_widget(b, "negative_group"  , parameters.negative_prompt!=NULL ); 
     show_widget(b, "wildcard_group"  , parameters.wildcard_prompt!=NULL );
@@ -284,48 +337,13 @@ show_sd_parameters( SDPromptViewerPlugin *plugin,
     }
 }
 
-static void
-set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
-                           gint                  min_width)
-{
-    EogWindow *window  = plugin->window;
-    GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
-    if( !sidebar ) { return; }
-
-    /* store original minimum size */
-    if( min_width >= 0 ) {
-        if( !plugin->sidebar_min_stored ) {
-             plugin->sidebar_min_stored = TRUE;
-            gtk_widget_get_size_request(
-                sidebar, &plugin->sidebar_min_width, &plugin->sidebar_min_height );
-        }
-    }
-    /* restore original minimum size */
-    else {
-        if( plugin->sidebar_min_stored ) {
-            plugin->sidebar_min_stored = FALSE;
-            gtk_widget_set_size_request(
-                sidebar, plugin->sidebar_min_width, plugin->sidebar_min_height );
-        }
-    }
-    /* if the original minimum size is stored then apply the new one */
-    if( plugin->sidebar_min_stored ) {
-        gtk_widget_set_size_request( sidebar, min_width, plugin->sidebar_min_height );
-    }
-}
-
 /*-------------------------------- EVENTS ---------------------------------*/
 
 static void
 on_png_text_chunk_loaded(gchar *text, gpointer user_ptr, int user_int) {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( user_ptr );
-    
-    if( text && text[0] ) {
-        show_sd_parameters( plugin, text, -1 );
-    } else {
-        show_message( plugin,
-        "No Stable Diffusion parameters found in the image." );
-    }
+    set_image_generation_data( plugin, text, -1 );
+    show_image_generation_data( plugin );
 }
 
 /*
@@ -336,7 +354,7 @@ on_jpg_text_file_loaded(gchar *text, gpointer user_ptr, int user_int) {
 */
 
 static void
-on_selection_changed(EogThumbView *view, SDPromptViewerPlugin *plugin) {
+on_selection_changed( EogThumbView *view, SDPromptViewerPlugin *plugin ) {
     GFile *file; EogImage *image;
     
     if( eog_thumb_view_get_n_selected( view ) == 0 ) {
@@ -355,6 +373,42 @@ on_selection_changed(EogThumbView *view, SDPromptViewerPlugin *plugin) {
 }
 
 static void
+on_copy_data_clicked( GtkWidget *widget, gpointer data ) {
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( data );
+    
+    if( plugin->image_generation_data != NULL ) {
+        gtk_clipboard_set_text(
+            gtk_clipboard_get( GDK_SELECTION_CLIPBOARD ),
+            plugin->image_generation_data,
+            plugin->image_generation_length );
+    }
+}
+
+static void
+on_preferences_clicked( GtkWidget *widget, gpointer data ) {
+    
+    SDPromptViewerPreferences *preferences =
+        g_object_new( TYPE_SDPROMPT_VIEWER_PREFERENCES, NULL);
+        
+    GtkWidget *preferences_widget =
+      peas_gtk_configurable_create_configure_widget( PEAS_GTK_CONFIGURABLE( preferences ) );
+
+    /* create a Gtk dialog that contains the plugin's configuration widget */
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Plugin Configuration",
+                                                     NULL,
+                                                     GTK_DIALOG_MODAL,
+                                                     "Close",
+                                                     GTK_RESPONSE_CLOSE,
+                                                     NULL);
+    gtk_container_add(GTK_CONTAINER(gtk_dialog_get_content_area(GTK_DIALOG(dialog))), preferences_widget);
+    gtk_widget_show_all(dialog);
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+    g_object_unref( preferences_widget );
+    g_object_unref( preferences );
+}
+
+static void
 on_activate( EogWindowActivatable *activatable )
 {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
@@ -363,6 +417,8 @@ on_activate( EogWindowActivatable *activatable )
     GtkWidget *thumbview;
     GtkWidget *sidebar;
     GdkScreen *screen;
+    GtkWidget *button;
+    GtkBuilder *builder;
     GError* error = NULL;
     
     /*-- add CSS styles --*/
@@ -381,15 +437,10 @@ on_activate( EogWindowActivatable *activatable )
     sidebar   = eog_window_get_sidebar( window );
     
     plugin->thumbview = EOG_THUMB_VIEW( thumbview );
-    plugin->selection_changed_id =
-        g_signal_connect( G_OBJECT (thumbview),
-                          "selection-changed",
-                          G_CALLBACK( on_selection_changed ),
-                          plugin );
 
 
     /*-- build the user interface --*/
-    plugin->sidebar_builder = gtk_builder_new();
+    plugin->sidebar_builder = builder = gtk_builder_new();
     gtk_builder_set_translation_domain( plugin->sidebar_builder,
                                         GETTEXT_PACKAGE );
     if( !gtk_builder_add_from_resource( plugin->sidebar_builder,
@@ -402,7 +453,7 @@ on_activate( EogWindowActivatable *activatable )
 
     /*-- add the user interface to the sidebar */
     eog_sidebar_add_page( EOG_SIDEBAR( sidebar ),
-                          _("Stable Diffusion Parameters"),
+                          _("Stable Diffusion Prompt Viewer"),
                           plugin->gtkbuilder_widget );
     gtk_widget_show_all( plugin->gtkbuilder_widget );
 
@@ -415,6 +466,27 @@ on_activate( EogWindowActivatable *activatable )
                      plugin, "minimum-width", G_SETTINGS_BIND_GET);
     g_settings_bind( settings, SETTINGS_FORCE_VISIBILITY,
                      plugin, "force-visibility", G_SETTINGS_BIND_GET);
+    
+    /*-- binding events using signals --*/
+    plugin->selection_changed_id =
+        g_signal_connect( G_OBJECT( thumbview ),
+                          "selection-changed",
+                          G_CALLBACK( on_selection_changed ),
+                          plugin );
+
+    button = get_widget( builder, "preferences_button" );
+    plugin->preferences_clicked_id =
+        g_signal_connect( G_OBJECT( button ),
+                          "clicked",
+                          G_CALLBACK( on_preferences_clicked ),
+                          plugin );
+        
+    button = get_widget( builder, "copy_data_button" );
+    plugin->copy_data_clicked_id =
+        g_signal_connect( G_OBJECT( button ),
+                          "clicked",
+                          G_CALLBACK( on_copy_data_clicked ),
+                          plugin );
 
     /*-- force update display for first time --*/
     on_selection_changed(plugin->thumbview, plugin);
@@ -430,6 +502,12 @@ on_deactivate( EogWindowActivatable *activatable )
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
     GtkWidget *sidebar, *thumbview;
     GdkScreen *screen;
+    GtkWidget *button;
+    GtkBuilder *builder = plugin->sidebar_builder;
+
+    /*-- restore sidebar width & release stored data --*/
+    set_sidebar_minimum_width( plugin, -1 );
+    set_image_generation_data( plugin, NULL, 0 );
 
     /*-- remove CSS styles --*/
     screen = gdk_screen_get_default();
@@ -438,18 +516,19 @@ on_deactivate( EogWindowActivatable *activatable )
             screen, GTK_STYLE_PROVIDER(plugin->css_provider) );
     }
     
-    /*-- restore sidebar minimum width --*/
-    set_sidebar_minimum_width( plugin, -1 );
 
     /*-- remove the user interface from the sidebar --*/
     sidebar = eog_window_get_sidebar( plugin->window );
     eog_sidebar_remove_page( EOG_SIDEBAR( sidebar ),
                              plugin->gtkbuilder_widget );
 
-    /*-- remove selection changed signal --*/
+    /*-- remove signals --*/
     thumbview = eog_window_get_thumb_view( plugin->window );
-    g_signal_handler_disconnect( thumbview, plugin->selection_changed_id) ;
-    
+    g_signal_handler_disconnect( thumbview, plugin->selection_changed_id );
+    button = get_widget( builder, "preferences_button" );
+    g_signal_handler_disconnect( button, plugin->preferences_clicked_id );
+    button = get_widget( builder, "copy_data_button" );
+    g_signal_handler_disconnect( button, plugin->copy_data_clicked_id );
     
     if( plugin->sidebar_builder ) {
         g_object_unref( plugin->sidebar_builder );
@@ -469,40 +548,6 @@ eog_window_activatable_iface_init(EogWindowActivatableInterface *iface)
 }
 
 /*------------------------------ PROPERTIES -------------------------------*/
-
-static void
-sdprompt_viewer_plugin_get_property(GObject    *object,
-                                    guint       prop_id,
-                                    GValue     *value,
-                                    GParamSpec *pspec)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
-    switch (prop_id)
-    {
-        case PROP_SHOW_UNKNOWN_PARAMS:
-            g_value_set_boolean(value, plugin->show_unknown_params);
-            break;
-            
-        case PROP_FORCE_MINIMUM_WIDTH:
-            g_value_set_boolean(value, plugin->force_minimum_width);
-            break;
-            
-        case PROP_MINIMUM_WIDTH:
-            g_value_set_double(value, plugin->minimum_width);
-            break;
-            
-        case PROP_FORCE_VISIBILITY:
-            g_value_set_boolean(value, plugin->force_visibility);
-            break;
-            
-        case PROP_WINDOW:
-            g_value_set_object(value, plugin->window);
-            break;
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
-    }
-}
 
 static void
 sdprompt_viewer_plugin_set_property(GObject       *object,
@@ -537,6 +582,40 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
             plugin->window = EOG_WINDOW( g_value_dup_object(value) );
             break;
             
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
+    }
+}
+
+static void
+sdprompt_viewer_plugin_get_property(GObject    *object,
+                                    guint       prop_id,
+                                    GValue     *value,
+                                    GParamSpec *pspec)
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
+    switch (prop_id)
+    {
+        case PROP_SHOW_UNKNOWN_PARAMS:
+            g_value_set_boolean(value, plugin->show_unknown_params);
+            break;
+            
+        case PROP_FORCE_MINIMUM_WIDTH:
+            g_value_set_boolean(value, plugin->force_minimum_width);
+            break;
+            
+        case PROP_MINIMUM_WIDTH:
+            g_value_set_double(value, plugin->minimum_width);
+            break;
+            
+        case PROP_FORCE_VISIBILITY:
+            g_value_set_boolean(value, plugin->force_visibility);
+            break;
+            
+        case PROP_WINDOW:
+            g_value_set_object(value, plugin->window);
+            break;
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
             break;

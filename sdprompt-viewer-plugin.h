@@ -104,11 +104,15 @@ struct         _SDPromptViewerPlugin
 
     /* Handlers ids */
     guint selection_changed_id;
+    guint preferences_clicked_id;
+    guint copy_data_clicked_id;
     
     /* Private data (?) */
     gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */
     gint     sidebar_min_width;
     gint     sidebar_min_height;
+    gchar   *image_generation_data;
+    gint     image_generation_length;
 
 };
 
