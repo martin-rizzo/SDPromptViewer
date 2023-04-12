@@ -34,6 +34,7 @@
 #  plugin will be installed in:
 #    ~/.local/share/eog/plugins/libsdprompt-viewer.so
 #    ~/.local/share/eog/plugins/sdprompt-viewer.plugin
+#    ~/.local/share/glib-2.0/schemas/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
 #
 SCRIPT_NAME=${BASH_SOURCE[0]##*/}
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -59,6 +60,9 @@ Example:
 #   Directory where test images are located. These images are used
 #   when running './make.sh run' to test the plugin functionality.
 TEST_IMAGES_DIR="$HOME/Extra/Test"
+
+# Directory where the GSettings schemas are stored
+GIO_SCHEMAS_DIR="$HOME/.local/share/glib-2.0/schemas"
 
 # Initialize script status to 0 (success)
 SCRIPT_STATUS=0
@@ -102,6 +106,14 @@ install() {
   SCRIPT_STATUS=$?
 }
 
+remove() {
+  echo "Executing remove command..."
+  rm "$HOME/.local/share/eog/plugins/libsdprompt-viewer.so"
+  rm "$HOME/.local/share/eog/plugins/sdprompt-viewer.plugin"
+  rm "$GIO_SCHEMAS_DIR/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml"
+  glib-compile-schemas "$GIO_SCHEMAS_DIR"
+}
+
 #================================== START ==================================#
 
 # if no arguments are provided, show the help message
@@ -126,6 +138,9 @@ case "$1" in
     ;;
   install)
     install
+    ;;
+  remove)
+    remove
     ;;
   *)
     echo "Invalid command: $1"
