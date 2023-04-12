@@ -394,7 +394,7 @@ on_preferences_clicked( GtkWidget *widget, gpointer data ) {
       peas_gtk_configurable_create_configure_widget( PEAS_GTK_CONFIGURABLE( preferences ) );
 
     /* create a Gtk dialog that contains the plugin's configuration widget */
-    GtkWidget *dialog = gtk_dialog_new_with_buttons("Plugin Configuration",
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Stable Diffusion Prompt Viewer",
                                                      NULL,
                                                      GTK_DIALOG_MODAL,
                                                      "Close",
@@ -411,30 +411,28 @@ on_preferences_clicked( GtkWidget *widget, gpointer data ) {
 static void
 on_activate( EogWindowActivatable *activatable )
 {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
-    EogWindow *window = plugin->window;
-    GSettings *settings;
-    GtkWidget *thumbview;
-    GtkWidget *sidebar;
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( activatable );
+    EogWindow *window    = plugin ? plugin->window :  NULL;
+    GtkWidget *thumbview = window ? eog_window_get_thumb_view( window ) : NULL;
+    GtkWidget *sidebar   = window ? eog_window_get_sidebar( window ) :  NULL;
+    GSettings *settings  = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
+    GError* error = NULL;
+    
     GdkScreen *screen;
     GtkWidget *button;
     GtkBuilder *builder;
-    GError* error = NULL;
     
     /*-- add CSS styles --*/
     plugin->css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource(
-        plugin->css_provider, RES_DEFAULT_CSS);
+        plugin->css_provider, RES_COLDMIND_CSS);
     screen = gdk_screen_get_default();
     if( screen ) {
         gtk_style_context_add_provider_for_screen(
             screen, GTK_STYLE_PROVIDER( plugin->css_provider ),
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION );
     }
-    
-    settings  = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
-    thumbview = eog_window_get_thumb_view( window );
-    sidebar   = eog_window_get_sidebar( window );
+
     
     plugin->thumbview = EOG_THUMB_VIEW( thumbview );
 

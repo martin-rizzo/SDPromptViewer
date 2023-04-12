@@ -1,11 +1,12 @@
 /**
- * @file    resources.h
- * @date    Mar 26, 2023
+ * @file    coldmind.h
+ * @brief   A dark GTK theme with shades of blue.
+ * @date    Apr 12, 2023
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
  * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
  *//*-------------------------------------------------------------------------
                        Stable Diffusion Prompt Viewer
-  An "Eye of GNOME" plugin to view prompts that are embedded within the images
+        A plugin for "Eye of GNOME" that shows the embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -27,20 +28,78 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-     
 */
 
-/* FILE: resources/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml */
-#define SDPROMPT_VIEWER_GSCHEMA_ID    "org.gnome.eog.plugins.sdprompt-viewer"
-#define SDPROMPT_VIEWER_GSCHEMA_PATH "/org/gnome/eog/plugins/sdprompt-viewer/"
-#define     SETTINGS_SHOW_UNKNOWN_PARAMS    "show-unknown-params"
-#define     SETTINGS_FORCE_MINIMUM_WIDTH    "force-minimum-width"
-#define     SETTINGS_MINIMUM_WIDTH          "minimum-width"
-#define     SETTINGS_FORCE_VISIBILITY       "force-visibility"
 
-/* FILE: resources.xml */
-#define RES_PREFIX "/dev/martin-rizzo/sdprompt-viewer"
-#define RES_PREFERENCES_UI RES_PREFIX"/sdprompt-viewer-preferences.ui"
-#define RES_PLUGIN_UI      RES_PREFIX"/sdprompt-viewer-plugin.ui"
-#define RES_DEFAULT_CSS    RES_PREFIX"/themes/default.css"
-#define RES_COLDMIND_CSS   RES_PREFIX"/themes/coldmind.css"
+/* Separator */
+.sdpromptviewer separator.horizontal {
+  background-color: #444444;
+  min-height: 2px;
+  margin-top: 16px;
+  margin-bottom: 0px;
+}
+
+/* Entry widget */
+.sdpromptviewer entry {
+  border-radius: 0px;
+  border: 1px solid #4c4c4c;
+  background-color: #2b2b2b;
+  color: #f5f5f5;
+  padding: 0px 4px;
+  font-size: 14px;
+}
+
+.sdpromptviewer entry:hover {
+  border-color: #666666;
+}
+
+.sdpromptviewer entry:focus {
+  border-color: #0088cc;
+  background-color: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.sdpromptviewer textview text {
+  color: #f5f5f5;
+  background-color: transparent;  
+}
+
+/* Textview widget */
+.sdpromptviewer textview {
+  color: #f5f5f5;
+  background-color: #2b2b2b; 
+}
+
+.sdpromptviewer textview:focus {
+  color: #f5f5f5;
+  background-color: #1e1e1e;
+}
+
+.sdpromptviewer scrolledwindow {
+  border-radius: 0px;
+  border: 1px solid #4c4c4c;
+}
+
+
+.sdpromptviewer textview {
+  font-size: 14px;
+  padding: 8px;
+}
+
+
+
+/* Label widget */
+.sdpromptviewer label {
+  color: #c5dbf5;
+  font-size: 14px;
+}
+
+.sdpromptviewer label.group-title {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  font-size: 16px;
+  font-weight: bold;
+  /* color: #d9d9d9; */
+  text-shadow: 1px 1px 1px #2c2c2c;
+}
+

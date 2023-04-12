@@ -3,6 +3,7 @@
   <gresource prefix="/dev/martin-rizzo/sdprompt-viewer">
     <file preprocess="xml-stripblanks" compressed="true" >sdprompt-viewer-preferences.ui</file>
     <file preprocess="xml-stripblanks"                   >sdprompt-viewer-plugin.ui</file>
-    <file                                                >themes/default.css</file>
+    <file>themes/default.css</file>
+    <file>themes/coldmind.css</file>
   </gresource>
 </gresources>

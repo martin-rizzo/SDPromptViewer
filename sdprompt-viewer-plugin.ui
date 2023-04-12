@@ -129,10 +129,7 @@
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkSeparator">
-                        <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -154,6 +151,7 @@
                               <object class="GtkEntry" id="model_entry">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
+                                <property name="editable">False</property>
                               </object>
                               <packing>
                                 <property name="expand">True</property>
@@ -165,6 +163,7 @@
                               <object class="GtkEntry" id="model_hash_entry">
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
+                                <property name="editable">False</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -172,6 +171,9 @@
                                 <property name="position">1</property>
                               </packing>
                             </child>
+                            <style>
+                              <class name="group-box"/>
+                            </style>
                           </object>
                         </child>
                         <child type="label">
@@ -180,6 +182,9 @@
                             <property name="can-focus">False</property>
                             <property name="label" translatable="yes">Model</property>
                             <property name="single-line-mode">True</property>
+                            <style>
+                              <class name="group-title"/>
+                            </style>
                           </object>
                         </child>
                       </object>
@@ -203,10 +208,7 @@
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkSeparator">
-                        <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -234,6 +236,9 @@
                                 <property name="wrap-mode">word</property>
                               </object>
                             </child>
+                            <style>
+                              <class name="group-box"/>
+                            </style>
                           </object>
                         </child>
                         <child type="label">
@@ -242,6 +247,9 @@
                             <property name="can-focus">False</property>
                             <property name="label" translatable="yes">Prompt</property>
                             <property name="single-line-mode">True</property>
+                            <style>
+                              <class name="group-title"/>
+                            </style>
                           </object>
                         </child>
                       </object>
@@ -278,6 +286,9 @@
                             <property name="wrap-mode">word</property>
                           </object>
                         </child>
+                        <style>
+                          <class name="group-box"/>
+                        </style>
                       </object>
                     </child>
                     <child type="label">
@@ -286,6 +297,9 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Negative prompt</property>
                         <property name="single-line-mode">True</property>
+                        <style>
+                          <class name="group-title"/>
+                        </style>
                       </object>
                     </child>
                   </object>
@@ -315,6 +329,9 @@
                             <property name="wrap-mode">word</property>
                           </object>
                         </child>
+                        <style>
+                          <class name="group-box"/>
+                        </style>
                       </object>
                     </child>
                     <child type="label">
@@ -323,6 +340,9 @@
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Wildcard prompt</property>
                         <property name="single-line-mode">True</property>
+                        <style>
+                          <class name="group-title"/>
+                        </style>
                       </object>
                     </child>
                   </object>
@@ -339,10 +359,7 @@
                     <property name="orientation">vertical</property>
                     <child>
                       <object class="GtkSeparator">
-                        <property name="visible">True</property>
                         <property name="can-focus">False</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -370,7 +387,6 @@
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="label" translatable="yes">Sampler:</property>
-                                    <property name="width-chars">8</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -382,6 +398,7 @@
                                   <object class="GtkEntry" id="sampler_entry">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
+                                    <property name="editable">False</property>
                                   </object>
                                   <packing>
                                     <property name="expand">True</property>
@@ -394,7 +411,6 @@
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="label" translatable="yes">Steps:</property>
-                                    <property name="width-chars">6</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -406,8 +422,9 @@
                                   <object class="GtkEntry" id="steps_entry">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
-                                    <property name="width-chars">6</property>
-                                    <property name="shadow-type">etched-out</property>
+                                    <property name="editable">False</property>
+                                    <property name="width-chars">4</property>
+                                    <property name="xalign">0.5</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -428,31 +445,6 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <child>
-                                  <object class="GtkLabel">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="label" translatable="yes">CFG Scale</property>
-                                    <property name="width-chars">8</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="cfg_scale_entry">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="width-chars">12</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <object class="GtkBox">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
@@ -464,6 +456,32 @@
                                   <packing>
                                     <property name="expand">True</property>
                                     <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="label" translatable="yes">CFG Scale:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkEntry" id="cfg_scale_entry">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="editable">False</property>
+                                    <property name="width-chars">4</property>
+                                    <property name="xalign">0.5</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
                                     <property name="position">2</property>
                                   </packing>
                                 </child>
@@ -472,7 +490,6 @@
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="label" translatable="yes">Width:</property>
-                                    <property name="width-chars">7</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -484,27 +501,14 @@
                                   <object class="GtkEntry" id="width_entry">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
-                                    <property name="width-chars">8</property>
+                                    <property name="editable">False</property>
+                                    <property name="width-chars">5</property>
+                                    <property name="xalign">0.5</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">True</property>
+                                    <property name="expand">False</property>
                                     <property name="fill">True</property>
                                     <property name="position">4</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkBox">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="orientation">vertical</property>
-                                    <child>
-                                      <placeholder/>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">5</property>
                                   </packing>
                                 </child>
                               </object>
@@ -520,31 +524,6 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <child>
-                                  <object class="GtkLabel">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="label" translatable="yes">Seed</property>
-                                    <property name="width-chars">8</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">0</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkEntry" id="seed_entry">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">True</property>
-                                    <property name="width-chars">12</property>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <object class="GtkBox">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
@@ -556,6 +535,32 @@
                                   <packing>
                                     <property name="expand">True</property>
                                     <property name="fill">True</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkLabel">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <property name="label" translatable="yes">Seed:</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="position">1</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkEntry" id="seed_entry">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">True</property>
+                                    <property name="editable">False</property>
+                                    <property name="width-chars">10</property>
+                                    <property name="xalign">0.5</property>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
                                     <property name="position">2</property>
                                   </packing>
                                 </child>
@@ -564,7 +569,6 @@
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
                                     <property name="label" translatable="yes">Height:</property>
-                                    <property name="width-chars">7</property>
                                   </object>
                                   <packing>
                                     <property name="expand">False</property>
@@ -576,27 +580,14 @@
                                   <object class="GtkEntry" id="height_entry">
                                     <property name="visible">True</property>
                                     <property name="can-focus">True</property>
-                                    <property name="width-chars">8</property>
+                                    <property name="editable">False</property>
+                                    <property name="width-chars">5</property>
+                                    <property name="xalign">0.5</property>
                                   </object>
                                   <packing>
-                                    <property name="expand">True</property>
+                                    <property name="expand">False</property>
                                     <property name="fill">True</property>
                                     <property name="position">4</property>
-                                  </packing>
-                                </child>
-                                <child>
-                                  <object class="GtkBox">
-                                    <property name="visible">True</property>
-                                    <property name="can-focus">False</property>
-                                    <property name="orientation">vertical</property>
-                                    <child>
-                                      <placeholder/>
-                                    </child>
-                                  </object>
-                                  <packing>
-                                    <property name="expand">True</property>
-                                    <property name="fill">True</property>
-                                    <property name="position">5</property>
                                   </packing>
                                 </child>
                               </object>
@@ -607,6 +598,9 @@
                                 <property name="position">2</property>
                               </packing>
                             </child>
+                            <style>
+                              <class name="group-box"/>
+                            </style>
                           </object>
                         </child>
                         <child type="label">
@@ -614,6 +608,9 @@
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
                             <property name="label" translatable="yes">Parameters</property>
+                            <style>
+                              <class name="group-title"/>
+                            </style>
                           </object>
                         </child>
                       </object>
@@ -650,7 +647,6 @@
                                 <property name="visible">True</property>
                                 <property name="can-focus">False</property>
                                 <property name="label" translatable="yes">Upscaler:</property>
-                                <property name="width-chars">8</property>
                               </object>
                               <packing>
                                 <property name="expand">False</property>
@@ -894,6 +890,9 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Highres fix</property>
+                        <style>
+                          <class name="group-title"/>
+                        </style>
                       </object>
                     </child>
                   </object>
@@ -1001,6 +1000,9 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Inpainting</property>
+                        <style>
+                          <class name="group-title"/>
+                        </style>
                       </object>
                     </child>
                   </object>
@@ -1133,6 +1135,9 @@
                             </child>
                           </object>
                         </child>
+                        <style>
+                          <class name="group-box"/>
+                        </style>
                       </object>
                     </child>
                     <child type="label">
@@ -1140,6 +1145,9 @@
                         <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Override settings</property>
+                        <style>
+                          <class name="group-title"/>
+                        </style>
                       </object>
                     </child>
                   </object>
@@ -1150,33 +1158,60 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkFrame" id="unknown_group">
+                  <object class="GtkBox" id="unknown_group">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="label-xalign">0</property>
-                    <property name="shadow-type">none</property>
+                    <property name="orientation">vertical</property>
                     <child>
-                      <object class="GtkScrolledWindow">
-                        <property name="height-request">200</property>
+                      <object class="GtkSeparator">
+                        <property name="can-focus">False</property>
+                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkFrame">
                         <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="shadow-type">in</property>
+                        <property name="can-focus">False</property>
+                        <property name="label-xalign">0</property>
+                        <property name="shadow-type">none</property>
                         <child>
-                          <object class="GtkTextView" id="unknown_text_view">
+                          <object class="GtkScrolledWindow">
+                            <property name="height-request">200</property>
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
-                            <property name="opacity">0.69999999999999996</property>
-                            <property name="wrap-mode">word</property>
+                            <property name="shadow-type">in</property>
+                            <child>
+                              <object class="GtkTextView" id="unknown_text_view">
+                                <property name="visible">True</property>
+                                <property name="can-focus">True</property>
+                                <property name="wrap-mode">word</property>
+                              </object>
+                            </child>
+                            <style>
+                              <class name="group-box"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child type="label">
+                          <object class="GtkLabel">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <property name="label" translatable="yes">Unknown parameters</property>
+                            <style>
+                              <class name="group-title"/>
+                            </style>
                           </object>
                         </child>
                       </object>
-                    </child>
-                    <child type="label">
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Unknown parameters</property>
-                      </object>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">True</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                   </object>
                   <packing>
