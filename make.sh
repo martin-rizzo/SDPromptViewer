@@ -1,13 +1,13 @@
 #!/bin/bash
-#
-# make.sh - Compiles, installs, and uninstalls the SD Prompt Viewer plugin
-#
-# Author : Martin Rizzo | <martinrizzo@gmail.com>
-# Date   : Mar 25, 2023
-# License: http://www.opensource.org/licenses/mit-license.html [MIT License]
-#-----------------------------------------------------------------------------
+# File    : make.sh
+# Brief   : Compiles, installs, and uninstalls the SD Prompt Viewer plugin
+# Author  : Martin Rizzo | <martinrizzo@gmail.com>
+# Date    : Mar 25, 2023
+# Repo    : https://github.com/martin-rizzo/SDPromptViewer
+# License : MIT
+#- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #                      Stable Diffusion Prompt Viewer
-#       A plugin for "Eye of GNOME" that shows the embedded prompts.
+#      A plugin for "Eye of GNOME" that displays the embedded prompts.
 #   
 #     Copyright (c) 2023 Martin Rizzo
 #     
@@ -29,12 +29,13 @@
 #     CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 #     TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
 #     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
+#_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 #
 #  plugin will be installed in:
-#    ~/.local/share/eog/plugins/libsdprompt-viewer.so
 #    ~/.local/share/eog/plugins/sdprompt-viewer.plugin
+#    ~/.local/share/eog/plugins/libsdprompt-viewer.so
 #    ~/.local/share/glib-2.0/schemas/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
+#    (?) ~/.local/share/metainfo/eog-sdprompt-display.appdata.xml
 #
 SCRIPT_NAME=${BASH_SOURCE[0]##*/}
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -72,7 +73,7 @@ SCRIPT_STATUS=0
 
 build() {
   echo "Executing build command..."
-  meson build && ninja -C build
+  meson setup build && ninja -C build
   SCRIPT_STATUS=$?
 }
 
@@ -102,7 +103,7 @@ clean() {
 
 install() {
   echo "Executing install command..."
-  meson build && ninja -C build install
+  meson setup build && ninja -C build install
   SCRIPT_STATUS=$?
 }
 
@@ -112,6 +113,19 @@ remove() {
   rm "$HOME/.local/share/eog/plugins/sdprompt-viewer.plugin"
   rm "$GIO_SCHEMAS_DIR/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml"
   glib-compile-schemas "$GIO_SCHEMAS_DIR"
+}
+
+release() {
+  echo "Executing release command..."
+
+  # get the latest Git tag, or use a default version if no tags exist
+  local latest_tag=$(git describe --tags --abbrev=0 HEAD || echo "0.1")
+
+  meson build -Drelease_version=$latest_tag && ninja -C build
+  # set the RELEASE_VERSION environment variable to the latest tag
+  #export RELEASE_VERSION=$latest_tag
+  #meson build && ninja -C build
+  SCRIPT_STATUS=$?
 }
 
 #================================== START ==================================#
@@ -141,6 +155,9 @@ case "$1" in
     ;;
   remove)
     remove
+    ;;
+  release)
+    release
     ;;
   *)
     echo "Invalid command: $1"
