@@ -101,11 +101,12 @@ struct         _SDPromptViewerPlugin
     gboolean force_minimum_width;
     gdouble  minimum_width;
     gboolean force_visibility;
+    gint     visual_style;
 
-    /* Handlers ids */
-    guint selection_changed_id;
-    guint preferences_clicked_id;
-    guint copy_data_clicked_id;
+    /* Signal IDs */
+    gulong thumbview_sel_changed_signal_id;
+    gulong preferences_button_signal_id;
+    gulong copy_button_signal_id;
     
     /* Private data (?) */
     gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */

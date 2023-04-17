@@ -112,16 +112,15 @@ create_user_interface( PeasGtkConfigurable *configurable )
     GSettings *settings;
     GtkBuilder *config_builder;
     GError *error = NULL;
-    GtkWidget *force_visibility_button;
-    GtkWidget *force_width_check_button;
-    GtkWidget *force_width_spin_button;
+    GtkWidget *force_visibility_button, *force_width_check_button;
+    GtkWidget *force_width_spin_button, *visual_style_combo_box;
     GObject *result;
     gchar *object_ids[] = {"vbox1", NULL};
 
     settings = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
 
     config_builder = gtk_builder_new ();
-    gtk_builder_set_translation_domain (config_builder, GETTEXT_PACKAGE);
+    gtk_builder_set_translation_domain( config_builder, GETTEXT_PACKAGE );
     if (!gtk_builder_add_objects_from_resource (config_builder, RES_PREFERENCES_UI, object_ids, &error))
     {
         g_warning ("Couldn't load UI resource: %s", error->message);
@@ -133,9 +132,10 @@ create_user_interface( PeasGtkConfigurable *configurable )
     
     
     /*-- binding widgets to plugin settings --*/
-    force_visibility_button  = get_widget( config_builder, "force_visibility_button" );
+    force_visibility_button  = get_widget( config_builder, "force_visibility_button"  );
     force_width_check_button = get_widget( config_builder, "force_width_check_button" );
-    force_width_spin_button  = get_widget( config_builder, "force_width_spin_button" );
+    force_width_spin_button  = get_widget( config_builder, "force_width_spin_button"  );
+    visual_style_combo_box   = get_widget( config_builder, "visual_style_combo_box"   );
     
     gtk_spin_button_configure( GTK_SPIN_BUTTON(force_width_spin_button),
                                gtk_adjustment_new(480,100,1000,5,50,0), 1, 0);
@@ -146,6 +146,9 @@ create_user_interface( PeasGtkConfigurable *configurable )
                      force_width_check_button, "active", G_SETTINGS_BIND_DEFAULT);
     g_settings_bind( settings, SETTINGS_MINIMUM_WIDTH,
                      force_width_spin_button, "value", G_SETTINGS_BIND_DEFAULT);
+    g_settings_bind( settings, SETTINGS_VISUAL_STYLE,
+                     visual_style_combo_box, "active", G_SETTINGS_BIND_DEFAULT);
+
 
     g_object_unref (config_builder);
     g_object_unref (settings);

@@ -177,7 +177,7 @@
                 <property name="orientation">vertical</property>
                 <property name="spacing">6</property>
                 <child>
-                  <object class="GtkComboBoxText">
+                  <object class="GtkComboBoxText" id="visual_style_combo_box">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <items>

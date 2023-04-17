@@ -68,6 +68,7 @@ enum {
     PROP_FORCE_MINIMUM_WIDTH,
     PROP_MINIMUM_WIDTH,
     PROP_FORCE_VISIBILITY,
+    PROP_VISUAL_STYLE,
     NUMBER_OF_PROPS
 };
 
@@ -127,6 +128,9 @@ sdprompt_viewer_plugin_class_init( SDPromptViewerPluginClass *klass )
         object_class, PROP_FORCE_VISIBILITY,
         g_param_spec_boolean("force-visibility",0,0, FALSE, flags) );
     
+    g_object_class_install_property(
+        object_class, PROP_VISUAL_STYLE,
+        g_param_spec_int("visual-style",0,0, 0,2, 0, flags) );
 }
 
 static void
@@ -148,12 +152,15 @@ sdprompt_viewer_plugin_dispose( GObject *object )
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
     eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPlugin disposing" );
     
-    g_clear_object( &plugin->window );
+    if( plugin->window ) {
+        g_object_unref( plugin->window );
+        plugin->window = NULL;
+    }
 
     G_OBJECT_CLASS( sdprompt_viewer_plugin_parent_class )->dispose( object );
 }
 
-/*--------------------  ---------------------*/
+/*------------------------------ OPERATIONS -------------------------------*/
 
 static void
 set_image_generation_data( SDPromptViewerPlugin *plugin,
@@ -173,7 +180,7 @@ set_image_generation_data( SDPromptViewerPlugin *plugin,
 
 static void
 set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
-                           gint                  min_width)
+                           gint                  min_width )
 {
     EogWindow *window  = plugin->window;
     GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
@@ -198,6 +205,43 @@ set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
     /* if the original minimum size is stored then apply the new one */
     if( plugin->sidebar_min_stored ) {
         gtk_widget_set_size_request( sidebar, min_width, plugin->sidebar_min_height );
+    }
+}
+
+static void
+set_visual_style( SDPromptViewerPlugin *plugin,
+                  gint                  visual_style )
+{
+    const gchar* css_resource_name = NULL;
+    GdkScreen *screen = gdk_screen_get_default();
+    if( !screen ) { return; }
+
+    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d",
+                       visual_style );
+
+    if( plugin->css_provider ) {
+        gtk_style_context_remove_provider_for_screen(
+                screen, GTK_STYLE_PROVIDER(plugin->css_provider) );
+        plugin->css_provider = NULL;
+    }
+    switch( visual_style ) {
+        case 0: css_resource_name = NULL;             break;
+        case 1: css_resource_name = RES_COLDMIND_CSS; break;
+    }
+    eog_debug_message( DEBUG_PLUGINS, "## css visual-style = %s",
+                       css_resource_name );
+
+    if( css_resource_name ) {
+        plugin->css_provider = gtk_css_provider_new();
+        gtk_css_provider_load_from_resource(
+            plugin->css_provider,
+            css_resource_name
+        );
+        gtk_style_context_add_provider_for_screen(
+            screen,
+            GTK_STYLE_PROVIDER( plugin->css_provider ),
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
     }
 }
 
@@ -354,7 +398,7 @@ on_jpg_text_file_loaded(gchar *text, gpointer user_ptr, int user_int) {
 */
 
 static void
-on_selection_changed( EogThumbView *view, SDPromptViewerPlugin *plugin ) {
+on_image_changed( EogThumbView *view, SDPromptViewerPlugin *plugin ) {
     GFile *file; EogImage *image;
     
     if( eog_thumb_view_get_n_selected( view ) == 0 ) {
@@ -418,24 +462,10 @@ on_activate( EogWindowActivatable *activatable )
     GSettings *settings  = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
     GError* error = NULL;
     
-    GdkScreen *screen;
     GtkWidget *button;
     GtkBuilder *builder;
     
-    /*-- add CSS styles --*/
-    plugin->css_provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_resource(
-        plugin->css_provider, RES_COLDMIND_CSS);
-    screen = gdk_screen_get_default();
-    if( screen ) {
-        gtk_style_context_add_provider_for_screen(
-            screen, GTK_STYLE_PROVIDER( plugin->css_provider ),
-            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION );
-    }
-
-    
     plugin->thumbview = EOG_THUMB_VIEW( thumbview );
-
 
     /*-- build the user interface --*/
     plugin->sidebar_builder = builder = gtk_builder_new();
@@ -464,30 +494,32 @@ on_activate( EogWindowActivatable *activatable )
                      plugin, "minimum-width", G_SETTINGS_BIND_GET);
     g_settings_bind( settings, SETTINGS_FORCE_VISIBILITY,
                      plugin, "force-visibility", G_SETTINGS_BIND_GET);
+    g_settings_bind( settings, SETTINGS_VISUAL_STYLE,
+                     plugin, "visual-style", G_SETTINGS_BIND_GET);
     
     /*-- binding events using signals --*/
-    plugin->selection_changed_id =
+    plugin->thumbview_sel_changed_signal_id =
         g_signal_connect( G_OBJECT( thumbview ),
                           "selection-changed",
-                          G_CALLBACK( on_selection_changed ),
+                          G_CALLBACK( on_image_changed ),
                           plugin );
 
     button = get_widget( builder, "preferences_button" );
-    plugin->preferences_clicked_id =
+    plugin->preferences_button_signal_id =
         g_signal_connect( G_OBJECT( button ),
                           "clicked",
                           G_CALLBACK( on_preferences_clicked ),
                           plugin );
         
-    button = get_widget( builder, "copy_data_button" );
-    plugin->copy_data_clicked_id =
+    button = get_widget( builder, "copy_button" );
+    plugin->copy_button_signal_id =
         g_signal_connect( G_OBJECT( button ),
                           "clicked",
                           G_CALLBACK( on_copy_data_clicked ),
                           plugin );
 
-    /*-- force update display for first time --*/
-    on_selection_changed(plugin->thumbview, plugin);
+    /*-- force update image information for first time --*/
+    on_image_changed(plugin->thumbview, plugin);
 
     /*-- clean up --*/
     if( settings ) { g_object_unref( settings ); }
@@ -499,21 +531,13 @@ on_deactivate( EogWindowActivatable *activatable )
 {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
     GtkWidget *sidebar, *thumbview;
-    GdkScreen *screen;
     GtkWidget *button;
     GtkBuilder *builder = plugin->sidebar_builder;
 
-    /*-- restore sidebar width & release stored data --*/
+    /*-- restore sidebar width, visual style & release stored data --*/
     set_sidebar_minimum_width( plugin, -1 );
     set_image_generation_data( plugin, NULL, 0 );
-
-    /*-- remove CSS styles --*/
-    screen = gdk_screen_get_default();
-    if( screen ) {
-        gtk_style_context_remove_provider_for_screen(
-            screen, GTK_STYLE_PROVIDER(plugin->css_provider) );
-    }
-    
+    set_visual_style( plugin, -1 );
 
     /*-- remove the user interface from the sidebar --*/
     sidebar = eog_window_get_sidebar( plugin->window );
@@ -522,11 +546,11 @@ on_deactivate( EogWindowActivatable *activatable )
 
     /*-- remove signals --*/
     thumbview = eog_window_get_thumb_view( plugin->window );
-    g_signal_handler_disconnect( thumbview, plugin->selection_changed_id );
+    g_signal_handler_disconnect( thumbview, plugin->thumbview_sel_changed_signal_id );
     button = get_widget( builder, "preferences_button" );
-    g_signal_handler_disconnect( button, plugin->preferences_clicked_id );
-    button = get_widget( builder, "copy_data_button" );
-    g_signal_handler_disconnect( button, plugin->copy_data_clicked_id );
+    g_signal_handler_disconnect( button, plugin->preferences_button_signal_id );
+    button = get_widget( builder, "copy_button" );
+    g_signal_handler_disconnect( button, plugin->copy_button_signal_id );
     
     if( plugin->sidebar_builder ) {
         g_object_unref( plugin->sidebar_builder );
@@ -556,6 +580,10 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
     switch (prop_id)
     {
+        case PROP_WINDOW:
+            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
+            break;
+            
         case PROP_SHOW_UNKNOWN_PARAMS:
             plugin->show_unknown_params = g_value_get_boolean(value);
             break;
@@ -575,11 +603,12 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
         case PROP_FORCE_VISIBILITY:
             plugin->force_visibility = g_value_get_boolean(value);
             break;
-
-        case PROP_WINDOW:
-            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
-            break;
             
+        case PROP_VISUAL_STYLE:
+            plugin->visual_style = g_value_get_int(value);
+            set_visual_style( plugin, plugin->visual_style );
+            break;
+
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
             break;
@@ -595,6 +624,10 @@ sdprompt_viewer_plugin_get_property(GObject    *object,
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
     switch (prop_id)
     {
+        case PROP_WINDOW:
+            g_value_set_object(value, plugin->window);
+            break;
+
         case PROP_SHOW_UNKNOWN_PARAMS:
             g_value_set_boolean(value, plugin->show_unknown_params);
             break;
@@ -611,9 +644,10 @@ sdprompt_viewer_plugin_get_property(GObject    *object,
             g_value_set_boolean(value, plugin->force_visibility);
             break;
             
-        case PROP_WINDOW:
-            g_value_set_object(value, plugin->window);
+        case PROP_VISUAL_STYLE:
+            g_value_set_int(value, plugin->visual_style);
             break;
+            
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
             break;

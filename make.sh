@@ -121,10 +121,10 @@ release() {
   # get the latest Git tag, or use a default version if no tags exist
   local latest_tag=$(git describe --tags --abbrev=0 HEAD || echo "0.1")
 
-  meson build -Drelease_version=$latest_tag && ninja -C build
-  # set the RELEASE_VERSION environment variable to the latest tag
-  #export RELEASE_VERSION=$latest_tag
-  #meson build && ninja -C build
+  ## meson build -Drelease_version=$latest_tag && ninja -C build
+  ## set the RELEASE_VERSION environment variable to the latest tag
+  ## export RELEASE_VERSION=$latest_tag
+  ## meson build && ninja -C build
   SCRIPT_STATUS=$?
 }
 

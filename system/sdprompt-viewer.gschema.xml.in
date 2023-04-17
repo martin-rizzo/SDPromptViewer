@@ -5,9 +5,11 @@
           path="/org/gnome/eog/plugins/sdprompt-viewer/">
    
   <key name="show-unknown-params" type="b">
-    <default>false</default>
     <summary>Show unknown generation parameters</summary>
-    <description>Enable to show generation parameters that were not identified by the parser.</description>
+    <description>
+      Enable to show generation parameters that were not identified by the parser.
+    </description>
+    <default>false</default>
   </key>
 
   <key name="force-minimum-width" type="b">
@@ -28,10 +30,21 @@
   </key>   
 
   <key name="force-visibility" type="b">
-    <default>false</default>
     <summary>Force visibility of this plugin in the sidebar</summary>
-    <description>When this option is enabled, this plugin will be shown in the sidebar when EOG is started.</description>
+    <description>
+      When this option is enabled, this plugin will be shown in the sidebar when EOG is started.
+    </description>
+    <default>false</default>
+  </key>
+  
+  <key name="visual-style" type="i">
+    <summary>The visual style of the plugin.</summary>
+    <description>
+      Defines plugin's visual style by modifying its appearance and layout using the CSS file chosen by the user.
+    </description>
+    <default>0</default>
+    <range min="0" max="2"/>
   </key>
 
-    </schema>
+  </schema>
 </schemalist>
