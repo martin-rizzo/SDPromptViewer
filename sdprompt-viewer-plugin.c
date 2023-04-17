@@ -178,9 +178,18 @@ set_image_generation_data( SDPromptViewerPlugin *plugin,
     }
 }
 
+/**
+ * apply_sidebar_minimum_width - Applies minimum width of the sidebar.
+ * @plugin    : A pointer to an #SDPromptViewerPlugin object
+ * @min_width : The minimum width of the sidebar
+ *
+ * Applies the minimum width that the sidebar of this plugin can have.
+ * If 'min_width == -1', the minimum width of the sidebar is reset
+ * to the default value used by Eye of GNOME.
+ */ 
 static void
-set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
-                           gint                  min_width )
+apply_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
+                             gint                  min_width )
 {
     EogWindow *window  = plugin->window;
     GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
@@ -208,9 +217,19 @@ set_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
     }
 }
 
+/**
+ * apply_visual_style - Applies a predefined visual style to the sidebar.
+ * @plugin       : A pointer to an #SDPromptViewerPlugin object
+ * @visual_style : An integer representing the visual style to apply
+ *
+ * Applies the specified visual style to all plugin's widgets by updating
+ * their CSS. The @visual_style parameter should be an integer corresponding
+ * to one of the predefined styles. If @visual_style is -1, any previously
+ * applied style is removed and associated resources are freed.
+ */ 
 static void
-set_visual_style( SDPromptViewerPlugin *plugin,
-                  gint                  visual_style )
+apply_visual_style( SDPromptViewerPlugin *plugin,
+                    gint                  visual_style )
 {
     const gchar* css_resource_name = NULL;
     GdkScreen *screen = gdk_screen_get_default();
@@ -535,9 +554,9 @@ on_deactivate( EogWindowActivatable *activatable )
     GtkBuilder *builder = plugin->sidebar_builder;
 
     /*-- restore sidebar width, visual style & release stored data --*/
-    set_sidebar_minimum_width( plugin, -1 );
     set_image_generation_data( plugin, NULL, 0 );
-    set_visual_style( plugin, -1 );
+    apply_sidebar_minimum_width( plugin, -1 );
+    apply_visual_style( plugin, -1 );
 
     /*-- remove the user interface from the sidebar --*/
     sidebar = eog_window_get_sidebar( plugin->window );
@@ -590,13 +609,13 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
             
         case PROP_FORCE_MINIMUM_WIDTH:
             plugin->force_minimum_width = g_value_get_boolean(value);
-            set_sidebar_minimum_width( plugin,
+            apply_sidebar_minimum_width( plugin,
                 plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
             break;
             
         case PROP_MINIMUM_WIDTH:
             plugin->minimum_width = g_value_get_double(value);
-            set_sidebar_minimum_width( plugin,
+            apply_sidebar_minimum_width( plugin,
                 plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
             break;
             
@@ -606,7 +625,7 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
             
         case PROP_VISUAL_STYLE:
             plugin->visual_style = g_value_get_int(value);
-            set_visual_style( plugin, plugin->visual_style );
+            apply_visual_style( plugin, plugin->visual_style );
             break;
 
         default:
