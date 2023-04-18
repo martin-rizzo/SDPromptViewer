@@ -40,8 +40,11 @@
 #define     SETTINGS_VISUAL_STYLE           "visual-style"
 
 /* FILE: resources.xml */
-#define RES_PREFIX "/dev/martin-rizzo/sdprompt-viewer"
+#define RES_PREFIX   "/dev/martin-rizzo/sdprompt-viewer"
 #define RES_PREFERENCES_UI RES_PREFIX"/sdprompt-viewer-preferences.ui"
 #define RES_PLUGIN_UI      RES_PREFIX"/sdprompt-viewer-plugin.ui"
-#define RES_DEFAULT_CSS    RES_PREFIX"/themes/default.css"
-#define RES_COLDMIND_CSS   RES_PREFIX"/themes/coldmind.css"
+
+#define STYLE_PREFIX RES_PREFIX"/themes"
+#define STYLE__NONE            STYLE_PREFIX"/style__none.css"
+#define STYLE__AUTUMN_TWILIGHT STYLE_PREFIX"/style__autumn_twilight.css"
+#define STYLE__FROSTY_DAWN     STYLE_PREFIX"/style__frosty_dawn.css"

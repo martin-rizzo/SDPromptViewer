@@ -181,8 +181,9 @@
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <items>
-                      <item translatable="yes">Default</item>
-                      <item translatable="yes">Cold Mind</item>
+                      <item translatable="yes">None</item>
+                      <item translatable="yes">Autumn Twilight</item>
+                      <item translatable="yes">Frosty Dawn</item>
                     </items>
                   </object>
                   <packing>

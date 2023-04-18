@@ -244,8 +244,9 @@ apply_visual_style( SDPromptViewerPlugin *plugin,
         plugin->css_provider = NULL;
     }
     switch( visual_style ) {
-        case 0: css_resource_name = NULL;             break;
-        case 1: css_resource_name = RES_COLDMIND_CSS; break;
+        case 0: css_resource_name = STYLE__NONE;            break;
+        case 1: css_resource_name = STYLE__AUTUMN_TWILIGHT; break;
+        case 2: css_resource_name = STYLE__FROSTY_DAWN;     break;
     }
     eog_debug_message( DEBUG_PLUGINS, "## css visual-style = %s",
                        css_resource_name );
