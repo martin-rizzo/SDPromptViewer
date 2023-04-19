@@ -1,12 +1,13 @@
 /**
  * @file    style__frosty_dawn.css
- * @brief   icy hues with a touch of warmth, resembling the early morning sky.
- * @date    Apr 17, 2023
+ * @brief   Icy hues with a touch of warmth, resembling the early morning sky.
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
- * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
- *//*-------------------------------------------------------------------------
+ * @date    Apr 17, 2023
+ * @repo    https://github.com/martin-rizzo/SDPromptViewer
+ * @license MIT
+ *//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
                       Stable Diffusion Prompt Viewer
-      A plugin for "Eye of GNOME" that displays the embedded prompts.
+      A plugin for "Eye of GNOME" that displays SD embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -28,6 +29,7 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
 @define-color col_title       #d9f3f3; /* Light Cyan       */
 @define-color col_label       #557799; /* Dark Slate Blue  */

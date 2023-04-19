@@ -7,7 +7,7 @@
 # License : MIT
 #- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #                      Stable Diffusion Prompt Viewer
-#      A plugin for "Eye of GNOME" that displays the embedded prompts.
+#      A plugin for "Eye of GNOME" that displays SD embedded prompts.
 #   
 #     Copyright (c) 2023 Martin Rizzo
 #     

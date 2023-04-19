@@ -1,8 +1,10 @@
 /**
  * @file    resources.h
- * @date    Mar 26, 2023
+ * @brief   Defines constants for accessing resources, such as UI and CSS.
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
- * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
+ * @date    Mar 26, 2023
+ * @repo    https://github.com/martin-rizzo/SDPromptViewer
+ * @license MIT
  *//*-------------------------------------------------------------------------
                        Stable Diffusion Prompt Viewer
   An "Eye of GNOME" plugin to view prompts that are embedded within the images

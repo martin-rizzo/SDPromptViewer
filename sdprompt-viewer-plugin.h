@@ -1,11 +1,13 @@
 /**
  * @file    sdprompt-viewer-plugin.h
- * @date    Mar 25, 2023
+ * @brief   Declares the main user interface for the plugin.
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
- * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
- *//*-------------------------------------------------------------------------
-                       Stable Diffusion Prompt Viewer
-  An "Eye of GNOME" plugin to view prompts that are embedded within the images
+ * @date    Mar 25, 2023
+ * @repo    https://github.com/martin-rizzo/SDPromptViewer
+ * @license MIT
+ *//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                      Stable Diffusion Prompt Viewer
+      A plugin for "Eye of GNOME" that displays SD embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -27,6 +29,7 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
 #ifndef __SDPROMPT_VIEWER_PLUGIN_H__
 #define __SDPROMPT_VIEWER_PLUGIN_H__

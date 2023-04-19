@@ -1,12 +1,13 @@
 /**
  * @file    coldmind.h
  * @brief   A dark GTK theme with shades of blue.
- * @date    Apr 12, 2023
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
- * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
- *//*-------------------------------------------------------------------------
-                       Stable Diffusion Prompt Viewer
-        A plugin for "Eye of GNOME" that shows the embedded prompts.
+ * @date    Apr 12, 2023
+ * @repo    https://github.com/martin-rizzo/SDPromptViewer
+ * @license MIT
+ *//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                      Stable Diffusion Prompt Viewer
+      A plugin for "Eye of GNOME" that displays SD embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -28,6 +29,7 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
 
 

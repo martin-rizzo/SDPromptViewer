@@ -1,11 +1,13 @@
 /**
  * @file    utils_jpgtx.h
- * @date    Mar 27, 2023
+ * @brief   
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
- * @license http://www.opensource.org/licenses/mit-license.html [MIT License]
- *//*-------------------------------------------------------------------------
-                       Stable Diffusion Prompt Viewer
-  An "Eye of GNOME" plugin to view prompts that are embedded within the images
+ * @date    Mar 27, 2023
+ * @repo    https://github.com/martin-rizzo/SDPromptViewer
+ * @license MIT
+ *//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                      Stable Diffusion Prompt Viewer
+      A plugin for "Eye of GNOME" that displays SD embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -27,12 +29,12 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-     
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
      
  TODO:
    - asynchronous implementation
    
- */
+*/
 
 typedef void (*JPGTextCallback)(gchar   *text,
                                 gpointer data_ptr,
