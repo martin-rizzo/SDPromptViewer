@@ -95,8 +95,7 @@
 .sdpromptviewer entry {
     color: @col_entry;
     background-color: @col_box;
-    border-width: 0;
-    border-radius: 0;
+    border-color: #FF0;
     padding: 0px 4px;
     font-size: 14px;
 }

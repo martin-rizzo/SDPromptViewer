@@ -47,6 +47,7 @@
 #include <eog/eog-window-activatable.h>
 
 #include "resources.h"
+#include "themes/themes.h"
 #include "utils_png.h"
 #include "utils_jpgtx.h"
 #include "utils_widget.h"
@@ -231,37 +232,47 @@ apply_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
  */ 
 static void
 apply_visual_style( SDPromptViewerPlugin *plugin,
-                    gint                  visual_style )
+                    gint                  visual_style,
+                    gint                  border_style,
+                    gint                  zoom_style )
 {
-    const gchar* css_resource_name = NULL;
     GdkScreen *screen = gdk_screen_get_default();
     if( !screen ) { return; }
 
-    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d",
-                       visual_style );
+    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d", visual_style );
 
-    if( plugin->css_provider ) {
+    /* remove previous visual styles */
+    if( plugin->visual_style_provider ) {
         gtk_style_context_remove_provider_for_screen(
-                screen, GTK_STYLE_PROVIDER(plugin->css_provider) );
-        plugin->css_provider = NULL;
-    }
-    switch( visual_style ) {
-        case 0: css_resource_name = STYLE__NONE;            break;
-        case 1: css_resource_name = STYLE__AUTUMN_TWILIGHT; break;
-        case 2: css_resource_name = STYLE__FROSTY_DAWN;     break;
-    }
-    eog_debug_message( DEBUG_PLUGINS, "## css visual-style = %s",
-                       css_resource_name );
-
-    if( css_resource_name ) {
-        plugin->css_provider = gtk_css_provider_new();
-        gtk_css_provider_load_from_resource(
-            plugin->css_provider,
-            css_resource_name
-        );
-        gtk_style_context_add_provider_for_screen(
             screen,
-            GTK_STYLE_PROVIDER( plugin->css_provider ),
+            plugin->visual_style_provider
+        );
+    }
+    /* try to create the new style providers */
+    plugin->visual_style_provider = new_theme_style_provider(
+                                        THEME_VISUAL_STYLE, visual_style );
+    if( plugin->visual_style_provider==NULL ) { return; }
+    plugin->border_style_provider = new_theme_style_provider(
+                                        THEME_BORDER_STYLE, border_style );
+    plugin->zoom_style_provider   = new_theme_style_provider(
+                                        THEME_ZOOM_STYLE, zoom_style );
+    
+    /* add the new visual styles */
+    if( plugin->visual_style_provider ) {
+        gtk_style_context_add_provider_for_screen(
+            screen, plugin->visual_style_provider,
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+    }
+    if( plugin->border_style_provider ) {
+        gtk_style_context_add_provider_for_screen(
+            screen, plugin->border_style_provider,
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+        );
+    }
+    if( plugin->zoom_style_provider ) {
+        gtk_style_context_add_provider_for_screen(
+            screen, plugin->zoom_style_provider,
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
         );
     }
@@ -559,7 +570,7 @@ on_deactivate( EogWindowActivatable *activatable )
     /*-- restore sidebar width, visual style & release stored data --*/
     set_image_generation_data( plugin, NULL, 0 );
     apply_sidebar_minimum_width( plugin, -1 );
-    apply_visual_style( plugin, -1 );
+    apply_visual_style( plugin, -1, -1, -1 );
 
     /*-- remove the user interface from the sidebar --*/
     sidebar = eog_window_get_sidebar( plugin->window );
@@ -577,10 +588,6 @@ on_deactivate( EogWindowActivatable *activatable )
     if( plugin->sidebar_builder ) {
         g_object_unref( plugin->sidebar_builder );
         plugin->sidebar_builder = NULL;
-    }
-    if( plugin->css_provider ) {
-        g_object_unref( plugin->css_provider );
-        plugin->css_provider = NULL;
     }
 }
 
@@ -628,7 +635,7 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
             
         case PROP_VISUAL_STYLE:
             plugin->visual_style = g_value_get_int(value);
-            apply_visual_style( plugin, plugin->visual_style );
+            apply_visual_style( plugin, plugin->visual_style, 0, 0 );
             break;
 
         default:

@@ -95,9 +95,13 @@ struct         _SDPromptViewerPlugin
 
     EogWindow        *window;
     EogThumbView     *thumbview;
-    GtkCssProvider   *css_provider;
     GtkBuilder       *sidebar_builder;
     GtkWidget        *gtkbuilder_widget;
+    
+    /* Visual Styles */
+    GtkStyleProvider *visual_style_provider;
+    GtkStyleProvider *border_style_provider;
+    GtkStyleProvider *zoom_style_provider;
     
     /* Properties */
     gboolean show_unknown_params;
@@ -111,7 +115,7 @@ struct         _SDPromptViewerPlugin
     gulong preferences_button_signal_id;
     gulong copy_button_signal_id;
     
-    /* Private data (?) */
+    /* Private Data (?) */
     gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */
     gint     sidebar_min_width;
     gint     sidebar_min_height;

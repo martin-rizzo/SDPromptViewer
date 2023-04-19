@@ -5,9 +5,9 @@
  * @date    Mar 26, 2023
  * @repo    https://github.com/martin-rizzo/SDPromptViewer
  * @license MIT
- *//*-------------------------------------------------------------------------
-                       Stable Diffusion Prompt Viewer
-  An "Eye of GNOME" plugin to view prompts that are embedded within the images
+ *//*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+                      Stable Diffusion Prompt Viewer
+      A plugin for "Eye of GNOME" that displays SD embedded prompts.
   
      Copyright (c) 2023 Martin Rizzo
   
@@ -29,7 +29,7 @@
      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
      TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-     
+ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
 
 /* FILE: resources/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml */
@@ -46,7 +46,4 @@
 #define RES_PREFERENCES_UI RES_PREFIX"/sdprompt-viewer-preferences.ui"
 #define RES_PLUGIN_UI      RES_PREFIX"/sdprompt-viewer-plugin.ui"
 
-#define STYLE_PREFIX RES_PREFIX"/themes"
-#define STYLE__NONE            STYLE_PREFIX"/style__none.css"
-#define STYLE__AUTUMN_TWILIGHT STYLE_PREFIX"/style__autumn_twilight.css"
-#define STYLE__FROSTY_DAWN     STYLE_PREFIX"/style__frosty_dawn.css"
+#define THEMES_RES_DIR RES_PREFIX"/themes"
