@@ -47,9 +47,20 @@ peas_gtk_configurable_iface_init( PeasGtkConfigurableInterface *iface );
 static void
 sdprompt_viewer_preferences_dispose( GObject *object );
 
-static GtkWidget * get_widget(GtkBuilder *builder, const gchar *widget_name) {
-    return GTK_WIDGET( gtk_builder_get_object( builder, widget_name ) );
-}
+static void create_gui( SDPromptViewerPreferences *preferences );
+static void destroy_gui( SDPromptViewerPreferences *preferences );
+
+
+#define get_widget(builder, widget_name) \
+    GTK_WIDGET( gtk_builder_get_object( builder, widget_name) )
+
+#define get_widgetx(builder, widget_type, widget_name) \
+    widget_type( gtk_builder_get_object( builder, widget_name) )
+
+#define settings_bind_default( settings, key, builder, widget_name, property ) \
+    g_settings_bind( settings, key, \
+                     gtk_builder_get_object(builder,widget_name), property, \
+                     G_SETTINGS_BIND_DEFAULT )
 
 
 /*
@@ -100,67 +111,93 @@ sdprompt_viewer_preferences_init( SDPromptViewerPreferences *object )
 static void
 sdprompt_viewer_preferences_dispose( GObject *object )
 {
+    SDPromptViewerPreferences *preferences = SDPROMPT_VIEWER_PREFERENCES( object );
+
     eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPreferences disposing");
+    destroy_gui( preferences );
+    
     G_OBJECT_CLASS( sdprompt_viewer_preferences_parent_class )
         ->dispose(object);
 }
 
-/*---------------------------- USER INTERFACE -----------------------------*/
+/*----------------------- GRAPHICAL USER INTERFACE ------------------------*/
 
-static GtkWidget *
-create_user_interface( PeasGtkConfigurable *configurable )
+static void create_gui( SDPromptViewerPreferences *preferences )
 {
-    GSettings *settings;
-    GtkBuilder *config_builder;
-    GError *error = NULL;
-    GtkWidget *force_visibility_button, *force_width_check_button;
-    GtkWidget *force_width_spin_button, *visual_style_combo_box;
-    GObject *result;
-    gchar *object_ids[] = {"vbox1", NULL};
-
-    settings = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
-
-    config_builder = gtk_builder_new ();
-    gtk_builder_set_translation_domain( config_builder, GETTEXT_PACKAGE );
-    if (!gtk_builder_add_objects_from_resource (config_builder, RES_PREFERENCES_UI, object_ids, &error))
+    GtkBuilder *builder; GSettings *settings; GError *error = NULL;
+    gchar *objects_to_build[] =
     {
-        g_warning ("Couldn't load UI resource: %s", error->message);
+        "main_container",
+        "force_width_adjust",
+        "border_size_adjust",
+        "font_size_adjust",
+        NULL
+    };
+    
+    /* create builder */
+    builder = gtk_builder_new();
+    gtk_builder_set_translation_domain( builder,
+                                        GETTEXT_PACKAGE );
+    gtk_builder_add_objects_from_resource( builder,
+                                           RES_PREFERENCES_UI,
+                                           objects_to_build,
+                                           &error );
+    if( error ) {
+        g_warning( "Couldn't load UI resource: %s", error->message );
         g_error_free (error);
     }
-
-    // Add a reference to keep the box alive after the builder is gone
-    result = g_object_ref( gtk_builder_get_object(config_builder, "vbox1") );
     
+    /* bind widgets with plugin settings */
+    settings = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
     
-    /*-- binding widgets to plugin settings --*/
-    force_visibility_button  = get_widget( config_builder, "force_visibility_button"  );
-    force_width_check_button = get_widget( config_builder, "force_width_check_button" );
-    force_width_spin_button  = get_widget( config_builder, "force_width_spin_button"  );
-    visual_style_combo_box   = get_widget( config_builder, "visual_style_combo_box"   );
+    settings_bind_default( settings, SETTINGS_FORCE_VISIBILITY,
+                           builder, "force_visibility_button", "active" );
     
-    gtk_spin_button_configure( GTK_SPIN_BUTTON(force_width_spin_button),
-                               gtk_adjustment_new(480,100,1000,5,50,0), 1, 0);
+    settings_bind_default( settings, SETTINGS_FORCE_MINIMUM_WIDTH,
+                           builder, "force_width_check_button", "active" );
+    
+    settings_bind_default( settings, SETTINGS_MINIMUM_WIDTH,
+                           builder, "force_width_spin_button", "value" );
+    
+    settings_bind_default( settings, SETTINGS_VISUAL_STYLE,
+                           builder, "visual_style_combo_box", "active" );
+    
+    settings_bind_default( settings, SETTINGS_BORDER_SIZE,
+                           builder, "border_size_adjust", "value" );
+    
+    settings_bind_default( settings, SETTINGS_FONT_SIZE,
+                           builder, "font_size_adjust", "value" );
+    
+    g_object_unref( settings );
+    settings = NULL;
 
-    g_settings_bind( settings, SETTINGS_FORCE_VISIBILITY,
-                     force_visibility_button, "active", G_SETTINGS_BIND_DEFAULT);
-    g_settings_bind( settings, SETTINGS_FORCE_MINIMUM_WIDTH,
-                     force_width_check_button, "active", G_SETTINGS_BIND_DEFAULT);
-    g_settings_bind( settings, SETTINGS_MINIMUM_WIDTH,
-                     force_width_spin_button, "value", G_SETTINGS_BIND_DEFAULT);
-    g_settings_bind( settings, SETTINGS_VISUAL_STYLE,
-                     visual_style_combo_box, "active", G_SETTINGS_BIND_DEFAULT);
+    /* store builder and return */
+    preferences->builder = builder;
+}
+
+static void destroy_gui( SDPromptViewerPreferences *preferences )
+{
+    if( preferences->builder ) {
+        g_object_unref( preferences->builder );
+        preferences->builder = NULL;
+    }
+}
 
 
-    g_object_unref (config_builder);
-    g_object_unref (settings);
-
-    return GTK_WIDGET(result);
+static GtkWidget *
+create_configure_widget( PeasGtkConfigurable *configurable )
+{
+    SDPromptViewerPreferences *preferences = SDPROMPT_VIEWER_PREFERENCES( configurable );
+    create_gui( preferences );
+    return g_object_ref(
+        get_widget( preferences->builder, "main_container" )
+    );
 }
 
 static void
 peas_gtk_configurable_iface_init( PeasGtkConfigurableInterface *iface )
 {
-    iface->create_configure_widget = create_user_interface;
+    iface->create_configure_widget = create_configure_widget;
 }
 
 /*========================= PLUGIN MAIN FUNCTION ==========================*/

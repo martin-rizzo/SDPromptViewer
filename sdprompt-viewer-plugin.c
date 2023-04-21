@@ -71,7 +71,9 @@ enum {
     PROP_FORCE_MINIMUM_WIDTH,
     PROP_MINIMUM_WIDTH,
     PROP_FORCE_VISIBILITY,
-    PROP_VISUAL_STYLE,
+    PROP_THEME_VISUAL_STYLE,
+    PROP_THEME_BORDER_SIZE,
+    PROP_THEME_FONT_SIZE,
     NUMBER_OF_PROPS
 };
 
@@ -132,8 +134,17 @@ sdprompt_viewer_plugin_class_init( SDPromptViewerPluginClass *klass )
         g_param_spec_boolean("force-visibility",0,0, FALSE, flags) );
     
     g_object_class_install_property(
-        object_class, PROP_VISUAL_STYLE,
-        g_param_spec_int("visual-style",0,0, 0,2, 0, flags) );
+        object_class, PROP_THEME_VISUAL_STYLE,
+        g_param_spec_int("visual-style",0,0, 0,9, 0, flags) );
+    
+    g_object_class_install_property(
+        object_class, PROP_THEME_BORDER_SIZE,
+        g_param_spec_int("border-size",0,0, 0,9, 0, flags) );
+    
+    g_object_class_install_property(
+        object_class, PROP_THEME_FONT_SIZE,
+        g_param_spec_int("font-size",0,0, -2,2, 0, flags) );
+
 }
 
 static void
@@ -232,14 +243,14 @@ apply_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
  */ 
 static void
 apply_visual_style( SDPromptViewerPlugin *plugin,
-                    gint                  visual_style,
-                    gint                  border_style,
-                    gint                  zoom_style )
+                    SDPromptTheme         theme )
 {
     GdkScreen *screen = gdk_screen_get_default();
     if( !screen ) { return; }
 
-    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d", visual_style );
+    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d", theme.visual_style );
+    eog_debug_message( DEBUG_PLUGINS, "## border-size  = %d", theme.border_size  );
+    eog_debug_message( DEBUG_PLUGINS, "## font-size    = %d", theme.font_size    );
 
     /* remove previous visual styles */
     if( plugin->visual_style_provider ) {
@@ -250,12 +261,12 @@ apply_visual_style( SDPromptViewerPlugin *plugin,
     }
     /* try to create the new style providers */
     plugin->visual_style_provider = new_theme_style_provider(
-                                        THEME_VISUAL_STYLE, visual_style );
+                                        THEME_VISUAL_STYLE, theme.visual_style );
     if( plugin->visual_style_provider==NULL ) { return; }
     plugin->border_style_provider = new_theme_style_provider(
-                                        THEME_BORDER_STYLE, border_style );
+                                        THEME_BORDER_STYLE, theme.border_size );
     plugin->zoom_style_provider   = new_theme_style_provider(
-                                        THEME_ZOOM_STYLE, zoom_style );
+                                        THEME_ZOOM_STYLE, theme.font_size );
     
     /* add the new visual styles */
     if( plugin->visual_style_provider ) {
@@ -529,6 +540,10 @@ on_activate( EogWindowActivatable *activatable )
                      plugin, "force-visibility", G_SETTINGS_BIND_GET);
     g_settings_bind( settings, SETTINGS_VISUAL_STYLE,
                      plugin, "visual-style", G_SETTINGS_BIND_GET);
+    g_settings_bind( settings, SETTINGS_BORDER_SIZE,
+                     plugin, "border-size", G_SETTINGS_BIND_GET);
+    g_settings_bind( settings, SETTINGS_FONT_SIZE,
+                     plugin, "font-size", G_SETTINGS_BIND_GET);
     
     /*-- binding events using signals --*/
     plugin->thumbview_sel_changed_signal_id =
@@ -562,15 +577,16 @@ on_activate( EogWindowActivatable *activatable )
 static void
 on_deactivate( EogWindowActivatable *activatable )
 {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (activatable);
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( activatable );
     GtkWidget *sidebar, *thumbview;
     GtkWidget *button;
     GtkBuilder *builder = plugin->sidebar_builder;
+    static const SDPromptTheme NULL_THEME = { -1, -1, -1 };
 
     /*-- restore sidebar width, visual style & release stored data --*/
     set_image_generation_data( plugin, NULL, 0 );
     apply_sidebar_minimum_width( plugin, -1 );
-    apply_visual_style( plugin, -1, -1, -1 );
+    apply_visual_style( plugin, NULL_THEME );
 
     /*-- remove the user interface from the sidebar --*/
     sidebar = eog_window_get_sidebar( plugin->window );
@@ -633,11 +649,26 @@ sdprompt_viewer_plugin_set_property(GObject       *object,
             plugin->force_visibility = g_value_get_boolean(value);
             break;
             
-        case PROP_VISUAL_STYLE:
-            plugin->visual_style = g_value_get_int(value);
-            apply_visual_style( plugin, plugin->visual_style, 0, 0 );
+        case PROP_THEME_VISUAL_STYLE:
+            plugin->theme.visual_style = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
             break;
 
+        case PROP_THEME_BORDER_SIZE:
+            plugin->theme.border_size = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
+            eog_debug_message( DEBUG_PLUGINS, "## BORDER-SIZE = %d",
+                               g_value_get_int(value) );
+            break;
+            
+        case PROP_THEME_FONT_SIZE:
+            plugin->theme.font_size = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
+            
+            eog_debug_message( DEBUG_PLUGINS, "## FONT-SIZE = %d",
+                               g_value_get_int(value) );
+            break;
+                        
         default:
             G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
             break;
@@ -673,8 +704,16 @@ sdprompt_viewer_plugin_get_property(GObject    *object,
             g_value_set_boolean(value, plugin->force_visibility);
             break;
             
-        case PROP_VISUAL_STYLE:
-            g_value_set_int(value, plugin->visual_style);
+        case PROP_THEME_VISUAL_STYLE:
+            g_value_set_int(value, plugin->theme.visual_style);
+            break;
+            
+        case PROP_THEME_BORDER_SIZE:
+            g_value_set_int(value, plugin->theme.border_size);
+            break;
+            
+        case PROP_THEME_FONT_SIZE:
+            g_value_set_int(value, plugin->theme.font_size);
             break;
             
         default:

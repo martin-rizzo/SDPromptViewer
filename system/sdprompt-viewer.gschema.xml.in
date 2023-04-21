@@ -45,6 +45,24 @@
     <default>0</default>
     <range min="0" max="9"/>
   </key>
-
+  
+  <key name="border-size" type="i">
+    <summary>The size of the border around GtkEntry and GtkTextView widgets.</summary>
+    <description>
+      Controls the size of the border around GtkEntry and GtkTextView widgets. A value of 0 means no border.
+    </description>
+    <default>1</default>
+    <range min="0" max="9"/>
+  </key>
+  
+  <key name="font-size" type="i">
+    <summary>The relative size of the font used to display information.</summary>
+    <description>
+      The relative size of the font used by the plugin. A value of 0 represents the normal size, positive values represent larger sizes, and negative values represent smaller sizes.
+    </description>
+    <default>0</default>
+    <range min="-2" max="2"/>
+  </key>
+  
   </schema>
 </schemalist>

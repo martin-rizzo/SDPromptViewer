@@ -92,6 +92,7 @@ typedef struct _SDPromptViewerPreferences SDPromptViewerPreferences;
 struct         _SDPromptViewerPreferences
 {
     PeasExtensionBase parent_instance;
+    GtkBuilder *builder;
 };
 
 /*----------------------- PREFERENCES PRIVATE DATA ------------------------*/

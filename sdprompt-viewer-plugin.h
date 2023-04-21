@@ -41,6 +41,12 @@
 #include <libpeas/peas-object-module.h>
 #include <eog/eog-thumb-view.h>
 #include <eog/eog-window.h>
+typedef struct SDPromptTheme_ SDPromptTheme;
+struct         SDPromptTheme_ {
+    gint visual_style;
+    gint border_size;
+    gint font_size;
+};
 G_BEGIN_DECLS
 
 #define TYPE_SDPROMPT_VIEWER_PLUGIN sdprompt_viewer_plugin_get_type()
@@ -104,11 +110,11 @@ struct         _SDPromptViewerPlugin
     GtkStyleProvider *zoom_style_provider;
     
     /* Properties */
-    gboolean show_unknown_params;
-    gboolean force_minimum_width;
-    gdouble  minimum_width;
-    gboolean force_visibility;
-    gint     visual_style;
+    gboolean      show_unknown_params;
+    gboolean      force_minimum_width;
+    gdouble       minimum_width;
+    gboolean      force_visibility;
+    SDPromptTheme theme;
 
     /* Signal IDs */
     gulong thumbview_sel_changed_signal_id;

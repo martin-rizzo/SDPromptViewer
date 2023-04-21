@@ -40,6 +40,8 @@
 #define     SETTINGS_MINIMUM_WIDTH          "minimum-width"
 #define     SETTINGS_FORCE_VISIBILITY       "force-visibility"
 #define     SETTINGS_VISUAL_STYLE           "visual-style"
+#define     SETTINGS_BORDER_SIZE            "border-size"
+#define     SETTINGS_FONT_SIZE              "font-size"
 
 /* FILE: resources.xml */
 #define RES_PREFIX   "/dev/martin-rizzo/sdprompt-viewer"

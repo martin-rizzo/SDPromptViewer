@@ -1,6 +1,6 @@
 /**
  * @file    themes.h
- * @brief   Provides the base functionality for creating custom GTK themes.
+ * @brief   Provides a basic functionality for creating themes for the plugin.
  * @author  Martin Rizzo | <martinrizzo@gmail.com>
  * @date    Apr 19, 2023
  * @repo    https://github.com/martin-rizzo/SDPromptViewer
@@ -92,10 +92,17 @@ new_theme_style_provider( THEME_STYLE_TYPE style_type,
     static const gchar *border_style_resources[] =
     {
         THEMES_RES_DIR"/bs_none.css",
-        THEMES_RES_DIR"/bs_thin.css"
+        THEMES_RES_DIR"/bs_line.css",
+        THEMES_RES_DIR"/bs_thick.css",
+        NULL
     };
     static const gchar *zoom_style_resources[] =
     {
+        THEMES_RES_DIR"/fs_xsmall.css",
+        THEMES_RES_DIR"/fs_small.css",
+        THEMES_RES_DIR"/fs_medium.css",
+        THEMES_RES_DIR"/fs_large.css",
+        THEMES_RES_DIR"/fs_xlarge.css",
         NULL
     };
     
@@ -103,7 +110,7 @@ new_theme_style_provider( THEME_STYLE_TYPE style_type,
         default:
         case THEME_VISUAL_STYLE: resources = visual_style_resources; break;
         case THEME_BORDER_STYLE: resources = border_style_resources; break;
-        case THEME_ZOOM_STYLE:   resources = zoom_style_resources;   break;
+        case THEME_ZOOM_STYLE:   resources = zoom_style_resources; style_id+=2; break;
     }
     /* verify if 'style_id' is valid */
     if( style_id<0 ) { return NULL; }
