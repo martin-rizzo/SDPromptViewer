@@ -55,6 +55,8 @@
 #include "sdprompt-viewer-plugin.h"
 #include "sdprompt-viewer-preferences.h"
 
+#define is_empty(str) ((str)==NULL || (str)[0]=='\0')
+
 static void
 eog_window_activatable_iface_init (EogWindowActivatableInterface *iface);
 static void
@@ -63,6 +65,8 @@ static void
 sdprompt_viewer_plugin_get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec);
 static void
 sdprompt_viewer_plugin_set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec);
+static const gchar *
+get_image_generation_data( SDPromptViewerPlugin *plugin );
 
 enum {
     PROP_O,
@@ -175,22 +179,6 @@ sdprompt_viewer_plugin_dispose( GObject *object )
 }
 
 /*------------------------------ OPERATIONS -------------------------------*/
-
-static void
-set_image_generation_data( SDPromptViewerPlugin *plugin,
-                           const gchar          *data,
-                           int                   max_bytes )
-{
-    if( plugin->image_generation_data ) {
-        g_free( plugin->image_generation_data );
-        plugin->image_generation_data = NULL;
-    }
-    if( max_bytes!=0 && data!=NULL && data[0]!='\0' ) {
-        if( max_bytes<0 ) { max_bytes = strlen( data ); }
-        plugin->image_generation_data   = g_strndup( data, max_bytes );
-        plugin->image_generation_length = max_bytes;
-    }
-}
 
 /**
  * apply_sidebar_minimum_width - Applies minimum width of the sidebar.
@@ -343,21 +331,21 @@ show_message( SDPromptViewerPlugin *plugin,
 static void
 show_image_generation_data( SDPromptViewerPlugin *plugin )
 {
-    SDParameters parameters;
+    SDParameters parameters; const gchar *image_generation_data;
     GtkTextView *text_view; GtkTextBuffer *buffer; int i;
     GtkBuilder *b = plugin->sidebar_builder;
     if( !b ) { return; }
         
     /* If no generation data is present, show a message and return */
-    if( !plugin->image_generation_data ) {
+    image_generation_data = get_image_generation_data( plugin );
+    if( is_empty(image_generation_data) ) {
         show_message( plugin,
                       "No Stable Diffusion parameters found in the image." );
         return;
     }
     
     parse_sd_parameters_from_buffer( &parameters,
-                                     plugin->image_generation_data,
-                                     plugin->image_generation_length );
+                                     image_generation_data, -1 );
     
     hide_all_widgets( b );
     display_text(b, "prompt_text_view"       , parameters.prompt            );
@@ -425,6 +413,180 @@ show_image_generation_data( SDPromptViewerPlugin *plugin )
     }
 }
 
+/*------------------------------ PROPERTIES -------------------------------*/
+
+/**
+ * set_image_generation_data:
+ * @plugin    : A pointer to an #SDPromptViewerPlugin object.
+ * @data      : A string containing the image generation data.
+ * @max_bytes : The maximum number of bytes in @data, or -1 to use the entire string.
+ *
+ * Sets the image generation data to the specified data string, up to a
+ * maximum of @max_bytes bytes. If @max_bytes is -1, the entire data string
+ * will be used.
+ * 
+ * If data is empty or NULL, the image generation data will be set to empty
+ * and any previously allocated resources will be freed.
+ */
+static void
+set_image_generation_data( SDPromptViewerPlugin *plugin,
+                           const gchar          *data,
+                           int                   max_bytes )
+{
+    if( plugin->image_generation_data ) {
+        g_free( plugin->image_generation_data );
+        plugin->image_generation_data = NULL;
+    }
+    if( max_bytes!=0 && data!=NULL && data[0]!='\0' ) {
+        if( max_bytes<0 ) { max_bytes = strlen( data ); }
+        plugin->image_generation_data = g_strndup( data, max_bytes );
+    }
+}
+
+/**
+ * get_image_generation_data:
+ * @plugin : A pointer to an #SDPromptViewerPlugin object.
+ *
+ * Returns: The image generation data, or an empty string if no data is set.
+ */
+static const gchar *
+get_image_generation_data( SDPromptViewerPlugin *plugin )
+{
+    return plugin->image_generation_data ? plugin->image_generation_data : "";
+}
+
+/**
+ * sdprompt_viewer_plugin_set_property:
+ * @object  : A #GObject
+ * @prop_id : The ID of the property to set
+ * @value   : A #GValue containing the new value for the property
+ * @pspec   : A #GParamSpec describing the property to set
+ *
+ * Sets the value of a property for the plugin.
+ *
+ * This function is a standard setter function used in GObject and GTK.
+ * It is called by the framework whenever a property value needs to be set
+ * for the plugin.
+ */
+static void
+sdprompt_viewer_plugin_set_property( GObject       *object,
+                                     guint          prop_id,
+                                     const GValue  *value,
+                                     GParamSpec    *pspec )
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
+    switch (prop_id)
+    {
+        case PROP_WINDOW:
+            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
+            break;
+            
+        case PROP_SHOW_UNKNOWN_PARAMS:
+            plugin->show_unknown_params = g_value_get_boolean(value);
+            break;
+            
+        case PROP_FORCE_MINIMUM_WIDTH:
+            plugin->force_minimum_width = g_value_get_boolean(value);
+            apply_sidebar_minimum_width( plugin,
+                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
+            break;
+            
+        case PROP_MINIMUM_WIDTH:
+            plugin->minimum_width = g_value_get_double(value);
+            apply_sidebar_minimum_width( plugin,
+                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
+            break;
+            
+        case PROP_FORCE_VISIBILITY:
+            plugin->force_visibility = g_value_get_boolean(value);
+            break;
+            
+        case PROP_THEME_VISUAL_STYLE:
+            plugin->theme.visual_style = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
+            break;
+
+        case PROP_THEME_BORDER_SIZE:
+            plugin->theme.border_size = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
+            eog_debug_message( DEBUG_PLUGINS, "## BORDER-SIZE = %d",
+                               g_value_get_int(value) );
+            break;
+            
+        case PROP_THEME_FONT_SIZE:
+            plugin->theme.font_size = g_value_get_int(value);
+            apply_visual_style( plugin, plugin->theme );
+            
+            eog_debug_message( DEBUG_PLUGINS, "## FONT-SIZE = %d",
+                               g_value_get_int(value) );
+            break;
+                        
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
+    }
+}
+
+/**
+ * sdprompt_viewer_plugin_get_property:
+ * @object  : A #GObject
+ * @prop_id : The ID of the property to get
+ * @value   : A #GValue to store the property value in
+ * @pspec   : A #GParamSpec describing the property to get
+ *
+ * Retrieves the value of a property for the plugin.
+ *
+ * This function is a standard getter function used in GObject and GTK.
+ * It is called by the framework whenever a property value needs to be
+ * retrieved for the plugin.
+ */
+static void
+sdprompt_viewer_plugin_get_property( GObject    *object,
+                                     guint       prop_id,
+                                     GValue     *value,
+                                     GParamSpec *pspec )
+{
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
+    switch (prop_id)
+    {
+        case PROP_WINDOW:
+            g_value_set_object(value, plugin->window);
+            break;
+
+        case PROP_SHOW_UNKNOWN_PARAMS:
+            g_value_set_boolean(value, plugin->show_unknown_params);
+            break;
+            
+        case PROP_FORCE_MINIMUM_WIDTH:
+            g_value_set_boolean(value, plugin->force_minimum_width);
+            break;
+            
+        case PROP_MINIMUM_WIDTH:
+            g_value_set_double(value, plugin->minimum_width);
+            break;
+            
+        case PROP_FORCE_VISIBILITY:
+            g_value_set_boolean(value, plugin->force_visibility);
+            break;
+            
+        case PROP_THEME_VISUAL_STYLE:
+            g_value_set_int(value, plugin->theme.visual_style);
+            break;
+            
+        case PROP_THEME_BORDER_SIZE:
+            g_value_set_int(value, plugin->theme.border_size);
+            break;
+            
+        case PROP_THEME_FONT_SIZE:
+            g_value_set_int(value, plugin->theme.font_size);
+            break;
+            
+        default:
+            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+            break;
+    }
+}
+
 /*-------------------------------- EVENTS ---------------------------------*/
 
 static void
@@ -462,14 +624,10 @@ on_image_changed( EogThumbView *view, SDPromptViewerPlugin *plugin ) {
 
 static void
 on_copy_data_clicked( GtkWidget *widget, gpointer data ) {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( data );
-    
-    if( plugin->image_generation_data != NULL ) {
-        gtk_clipboard_set_text(
-            gtk_clipboard_get( GDK_SELECTION_CLIPBOARD ),
-            plugin->image_generation_data,
-            plugin->image_generation_length );
-    }
+    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( data );    
+    gtk_clipboard_set_text(
+        gtk_clipboard_get( GDK_SELECTION_CLIPBOARD ),
+        get_image_generation_data( plugin ), -1 );
 }
 
 static void
@@ -612,114 +770,6 @@ eog_window_activatable_iface_init(EogWindowActivatableInterface *iface)
 {
     iface->activate   = on_activate;
     iface->deactivate = on_deactivate;
-}
-
-/*------------------------------ PROPERTIES -------------------------------*/
-
-static void
-sdprompt_viewer_plugin_set_property(GObject       *object,
-                                     guint         prop_id,
-                                     const GValue *value,
-                                     GParamSpec   *pspec)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
-    switch (prop_id)
-    {
-        case PROP_WINDOW:
-            plugin->window = EOG_WINDOW( g_value_dup_object(value) );
-            break;
-            
-        case PROP_SHOW_UNKNOWN_PARAMS:
-            plugin->show_unknown_params = g_value_get_boolean(value);
-            break;
-            
-        case PROP_FORCE_MINIMUM_WIDTH:
-            plugin->force_minimum_width = g_value_get_boolean(value);
-            apply_sidebar_minimum_width( plugin,
-                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
-            break;
-            
-        case PROP_MINIMUM_WIDTH:
-            plugin->minimum_width = g_value_get_double(value);
-            apply_sidebar_minimum_width( plugin,
-                plugin->force_minimum_width ? (gint)plugin->minimum_width : -1 );
-            break;
-            
-        case PROP_FORCE_VISIBILITY:
-            plugin->force_visibility = g_value_get_boolean(value);
-            break;
-            
-        case PROP_THEME_VISUAL_STYLE:
-            plugin->theme.visual_style = g_value_get_int(value);
-            apply_visual_style( plugin, plugin->theme );
-            break;
-
-        case PROP_THEME_BORDER_SIZE:
-            plugin->theme.border_size = g_value_get_int(value);
-            apply_visual_style( plugin, plugin->theme );
-            eog_debug_message( DEBUG_PLUGINS, "## BORDER-SIZE = %d",
-                               g_value_get_int(value) );
-            break;
-            
-        case PROP_THEME_FONT_SIZE:
-            plugin->theme.font_size = g_value_get_int(value);
-            apply_visual_style( plugin, plugin->theme );
-            
-            eog_debug_message( DEBUG_PLUGINS, "## FONT-SIZE = %d",
-                               g_value_get_int(value) );
-            break;
-                        
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
-    }
-}
-
-static void
-sdprompt_viewer_plugin_get_property(GObject    *object,
-                                    guint       prop_id,
-                                    GValue     *value,
-                                    GParamSpec *pspec)
-{
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
-    switch (prop_id)
-    {
-        case PROP_WINDOW:
-            g_value_set_object(value, plugin->window);
-            break;
-
-        case PROP_SHOW_UNKNOWN_PARAMS:
-            g_value_set_boolean(value, plugin->show_unknown_params);
-            break;
-            
-        case PROP_FORCE_MINIMUM_WIDTH:
-            g_value_set_boolean(value, plugin->force_minimum_width);
-            break;
-            
-        case PROP_MINIMUM_WIDTH:
-            g_value_set_double(value, plugin->minimum_width);
-            break;
-            
-        case PROP_FORCE_VISIBILITY:
-            g_value_set_boolean(value, plugin->force_visibility);
-            break;
-            
-        case PROP_THEME_VISUAL_STYLE:
-            g_value_set_int(value, plugin->theme.visual_style);
-            break;
-            
-        case PROP_THEME_BORDER_SIZE:
-            g_value_set_int(value, plugin->theme.border_size);
-            break;
-            
-        case PROP_THEME_FONT_SIZE:
-            g_value_set_int(value, plugin->theme.font_size);
-            break;
-            
-        default:
-            G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-            break;
-    }
 }
 
 /*========================= PLUGIN MAIN FUNCTION ==========================*/

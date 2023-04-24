@@ -114,6 +114,7 @@ struct         _SDPromptViewerPlugin
     gboolean      force_minimum_width;
     gdouble       minimum_width;
     gboolean      force_visibility;
+    gchar        *image_generation_data;
     SDPromptTheme theme;
 
     /* Signal IDs */
@@ -125,8 +126,6 @@ struct         _SDPromptViewerPlugin
     gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */
     gint     sidebar_min_width;
     gint     sidebar_min_height;
-    gchar   *image_generation_data;
-    gint     image_generation_length;
 
 };
 

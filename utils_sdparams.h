@@ -515,9 +515,10 @@ parse_sd_parameters(SDParameters *sd_parameters)
  * 
  * @param sd_parameters A pointer to the SDParameters struct that will be
  *    populated with the identified generation parameters.
- * @param buffer A pointer to the buffer containing the input text to be
- *    parsed.
- * @param buffer_size The size of the buffer in bytes.
+ * @param buffer A pointer to the buffer (or string) containing the input
+ *    text to be parsed.
+ * @param buffer_size The number of bytes in the buffer or -1 if buffer
+ *    contains a null-terminated string.
  */
 static void
 parse_sd_parameters_from_buffer(SDParameters *sd_parameters,
