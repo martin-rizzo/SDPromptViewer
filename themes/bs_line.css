@@ -1,7 +1,6 @@
 
 
 .sdpromptviewer entry {
-    border-width: 1px;
+    border: 1px solid;
     border-radius: 0px;
-    border-style: solid;
 }

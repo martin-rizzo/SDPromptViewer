@@ -243,9 +243,21 @@ apply_visual_style( SDPromptViewerPlugin *plugin,
     /* remove previous visual styles */
     if( plugin->visual_style_provider ) {
         gtk_style_context_remove_provider_for_screen(
-            screen,
-            plugin->visual_style_provider
-        );
+            screen, plugin->visual_style_provider);
+        g_object_unref( plugin->visual_style_provider );
+        plugin->visual_style_provider = NULL;
+    }
+    if( plugin->border_style_provider ) {
+        gtk_style_context_remove_provider_for_screen(
+            screen, plugin->border_style_provider);
+        g_object_unref( plugin->border_style_provider );
+        plugin->border_style_provider = NULL;
+    }
+    if( plugin->zoom_style_provider ) {
+        gtk_style_context_remove_provider_for_screen(
+            screen, plugin->zoom_style_provider);
+        g_object_unref( plugin->zoom_style_provider );
+        plugin->zoom_style_provider = NULL;        
     }
     /* try to create the new style providers */
     plugin->visual_style_provider = new_theme_style_provider(

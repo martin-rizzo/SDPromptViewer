@@ -11,7 +11,6 @@
     <file>themes/bs_thick.css</file>
     <file>themes/fs_xsmall.css</file>
     <file>themes/fs_small.css</file>
-    <file>themes/fs_medium.css</file>
     <file>themes/fs_large.css</file>
     <file>themes/fs_xlarge.css</file>
   </gresource>

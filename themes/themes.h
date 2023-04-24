@@ -84,7 +84,7 @@ new_theme_style_provider( THEME_STYLE_TYPE style_type,
     
     static const gchar *visual_style_resources[] =
     {
-        THEMES_RES_DIR"/vs_none.css",
+        "" /* THEMES_RES_DIR"/vs_none.css" */,
         THEMES_RES_DIR"/vs_autumn_twilight.css",
         THEMES_RES_DIR"/vs_frosty_dawn.css",
         NULL
@@ -100,7 +100,7 @@ new_theme_style_provider( THEME_STYLE_TYPE style_type,
     {
         THEMES_RES_DIR"/fs_xsmall.css",
         THEMES_RES_DIR"/fs_small.css",
-        THEMES_RES_DIR"/fs_medium.css",
+        "",
         THEMES_RES_DIR"/fs_large.css",
         THEMES_RES_DIR"/fs_xlarge.css",
         NULL
@@ -114,9 +114,9 @@ new_theme_style_provider( THEME_STYLE_TYPE style_type,
     }
     /* verify if 'style_id' is valid */
     if( style_id<0 ) { return NULL; }
-    for( i=0; i<=style_id; i++) {
-        if( resources[i]==NULL ) { return NULL; }
-    }
+    for( i=0; i<=style_id; i++) { if( resources[i]==NULL ) { return NULL; } }
+    if( *resources[style_id]=='\0' ) { return NULL; }
+    
     /* create the provider and load the css info into it */
     css_provider = gtk_css_provider_new();
     gtk_css_provider_load_from_resource( css_provider,

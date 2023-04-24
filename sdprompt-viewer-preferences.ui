@@ -158,8 +158,8 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="margin-top">4</property>
-                    <property name="margin-bottom">4</property>
+                    <property name="margin-top">6</property>
+                    <property name="margin-bottom">6</property>
                     <property name="label" translatable="yes">Sidebar Control</property>
                     <attributes>
                       <attribute name="weight" value="bold"/>
@@ -197,8 +197,8 @@
                   <object class="GtkBox" id="vbox3">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="margin-start">8</property>
-                    <property name="margin-end">8</property>
+                    <property name="margin-start">12</property>
+                    <property name="margin-end">12</property>
                     <property name="orientation">vertical</property>
                     <property name="spacing">6</property>
                     <child>
@@ -237,12 +237,10 @@
                           <object class="GtkScale" id="border_size_scale">
                             <property name="visible">True</property>
                             <property name="can-focus">True</property>
+                            <property name="margin-end">8</property>
                             <property name="adjustment">border_size_adjust</property>
-                            <property name="round-digits">1</property>
                             <property name="digits">0</property>
-                            <property name="draw-value">False</property>
                             <property name="has-origin">False</property>
-                            <property name="value-pos">right</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -254,6 +252,7 @@
                           <object class="GtkLabel">
                             <property name="visible">True</property>
                             <property name="can-focus">False</property>
+                            <property name="margin-start">8</property>
                             <property name="label" translatable="yes">Zoom:</property>
                           </object>
                           <packing>
@@ -269,9 +268,7 @@
                             <property name="adjustment">font_size_adjust</property>
                             <property name="round-digits">1</property>
                             <property name="digits">0</property>
-                            <property name="draw-value">False</property>
                             <property name="has-origin">False</property>
-                            <property name="value-pos">right</property>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -292,8 +289,8 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <property name="margin-top">4</property>
-                    <property name="margin-bottom">4</property>
+                    <property name="margin-top">6</property>
+                    <property name="margin-bottom">10</property>
                     <property name="label" translatable="yes">Visual Style</property>
                     <attributes>
                       <attribute name="weight" value="bold"/>
