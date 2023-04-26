@@ -31,9 +31,7 @@
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+#include "config.h"
 #include <gtk/gtk.h>
 #include <glib/gi18n-lib.h>
 #include <eog/eog-debug.h>
