@@ -40,6 +40,7 @@
 #include <libpeas/peas-extension-base.h>
 #include <libpeas/peas-object-module.h>
 #include <eog/eog-thumb-view.h>
+#include <eog/eog-sidebar.h>
 #include <eog/eog-window.h>
 typedef struct SDPromptTheme_ SDPromptTheme;
 struct         SDPromptTheme_ {
@@ -90,6 +91,20 @@ typedef struct _SDPromptViewerPluginClass SDPromptViewerPluginClass;
 struct         _SDPromptViewerPluginClass
 {
     PeasExtensionBaseClass parent_class;
+    
+    gint instance_count;
+    
+    /* Visual Styles */
+    SDPromptTheme    current_theme;
+    gboolean         is_theme_locked;
+    GtkStyleProvider *visual_style_provider;
+    GtkStyleProvider *border_style_provider;
+    GtkStyleProvider *zoom_style_provider;
+    
+    /* Minimum Sidebar Size */
+    gint sidebar_min_width;
+    gint sidebar_original_min_width;
+    gint sidebar_original_min_height;
 };
 
 /*----------------------------- PLUGIN OBJECT -----------------------------*/
@@ -99,15 +114,11 @@ struct         _SDPromptViewerPlugin
 {
     PeasExtensionBase parent_instance;
 
-    EogWindow        *window;
-    EogThumbView     *thumbview;
-    GtkBuilder       *sidebar_builder;
-    GtkWidget        *gtkbuilder_widget;
-    
-    /* Visual Styles */
-    GtkStyleProvider *visual_style_provider;
-    GtkStyleProvider *border_style_provider;
-    GtkStyleProvider *zoom_style_provider;
+    EogWindow     *window;
+    EogThumbView  *thumbview;
+    EogSidebar    *sidebar;
+    GtkWidget     *page;
+    GtkBuilder    *page_builder;
     
     /* Properties */
     gboolean      show_unknown_params;
@@ -122,11 +133,9 @@ struct         _SDPromptViewerPlugin
     gulong preferences_button_signal_id;
     gulong copy_button_signal_id;
     
-    /* Private Data (?) */
-    gboolean sidebar_min_stored; /* <- TRUE: *_width, *_height are valid */
+    /* Minimum Sidebar Size */
+    gboolean sidebar_min_is_forced;
     gint     sidebar_min_width;
-    gint     sidebar_min_height;
-
 };
 
 /*---------------------------- PUBLIC FUNCTIONS ---------------------------*/

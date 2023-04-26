@@ -82,9 +82,9 @@ run() {
   install
   if [ $SCRIPT_STATUS -eq 0 ]; then
     if [ -e "$TEST_IMAGES_DIR" ]; then
-      EOG_DEBUG_PLUGINS='true'  eog "$TEST_IMAGES_DIR" & disown
+      EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog "$TEST_IMAGES_DIR" & disown
     else
-      EOG_DEBUG_PLUGINS='true'  eog &disown
+      EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog &disown
     fi
   fi
 }

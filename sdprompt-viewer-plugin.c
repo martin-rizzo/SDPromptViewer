@@ -31,19 +31,18 @@
      SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 */
-#include "eog/eog-window.h"
-#include "gtk/gtkcssprovider.h"
-#include "libpeas-gtk/peas-gtk-configurable.h"
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-#include <gtk/gtk.h>
+
+#include "config.h"
+
 #include <glib/gi18n-lib.h>
+#include <gtk/gtk.h>
+#include <gtk/gtkcssprovider.h>
+#include <libpeas-gtk/peas-gtk-configurable.h>
 
 #include <eog/eog-debug.h>
-#include <eog/eog-image.h>
 #include <eog/eog-thumb-view.h>
 #include <eog/eog-sidebar.h>
+#include <eog/eog-window.h>
 #include <eog/eog-window-activatable.h>
 
 #include "resources.h"
@@ -55,7 +54,9 @@
 #include "sdprompt-viewer-plugin.h"
 #include "sdprompt-viewer-preferences.h"
 
-#define is_empty(str) ((str)==NULL || (str)[0]=='\0')
+#define UNKNOWN_SIZE (-1974)
+#define IS_EMPTY_STR(str) ((str)==NULL || (str)[0]=='\0')
+#define DEBUG_MESSAGE(...) eog_debug_message( DEBUG_PLUGINS, __VA_ARGS__ )
 
 static void
 eog_window_activatable_iface_init (EogWindowActivatableInterface *iface);
@@ -148,7 +149,10 @@ sdprompt_viewer_plugin_class_init( SDPromptViewerPluginClass *klass )
     g_object_class_install_property(
         object_class, PROP_THEME_FONT_SIZE,
         g_param_spec_int("font-size",0,0, -2,2, 0, flags) );
-
+    
+    klass->sidebar_min_width = UNKNOWN_SIZE;
+    klass->sidebar_original_min_width  = UNKNOWN_SIZE;
+    klass->sidebar_original_min_height = UNKNOWN_SIZE;
 }
 
 static void
@@ -160,15 +164,14 @@ sdprompt_viewer_plugin_class_finalize( SDPromptViewerPluginClass *klass )
 static void
 sdprompt_viewer_plugin_init( SDPromptViewerPlugin *plugin )
 {
-    eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPlugin initializing" );
-    plugin->sidebar_min_stored = FALSE;
+    DEBUG_MESSAGE( "SDPromptViewerPlugin initializing" );
 }
 
 static void
 sdprompt_viewer_plugin_dispose( GObject *object )
 {
     SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( object );
-    eog_debug_message( DEBUG_PLUGINS, "SDPromptViewerPlugin disposing" );
+    DEBUG_MESSAGE( "SDPromptViewerPlugin disposing" );
     
     if( plugin->window ) {
         g_object_unref( plugin->window );
@@ -193,29 +196,26 @@ static void
 apply_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
                              gint                  min_width )
 {
-    EogWindow *window  = plugin->window;
-    GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
-    if( !sidebar ) { return; }
-
-    /* store original minimum size */
+    SDPromptViewerPluginClass *klass = SDPROMPT_VIEWER_PLUGIN_GET_CLASS( plugin );
+    g_assert_nonnull( klass );
+    
+    /* ensure that the original minimum size is stored */
+    if( klass->sidebar_original_min_width == UNKNOWN_SIZE ) {
+        gtk_widget_get_size_request( GTK_WIDGET( plugin->sidebar ),
+                                     &klass->sidebar_original_min_width,
+                                     &klass->sidebar_original_min_height );
+    }
+    // set the minimum size
     if( min_width >= 0 ) {
-        if( !plugin->sidebar_min_stored ) {
-             plugin->sidebar_min_stored = TRUE;
-            gtk_widget_get_size_request(
-                sidebar, &plugin->sidebar_min_width, &plugin->sidebar_min_height );
-        }
+        gtk_widget_set_size_request( GTK_WIDGET( plugin->sidebar ),
+                                     min_width,
+                                     klass->sidebar_original_min_height );
     }
     /* restore original minimum size */
-    else {
-        if( plugin->sidebar_min_stored ) {
-            plugin->sidebar_min_stored = FALSE;
-            gtk_widget_set_size_request(
-                sidebar, plugin->sidebar_min_width, plugin->sidebar_min_height );
-        }
-    }
-    /* if the original minimum size is stored then apply the new one */
-    if( plugin->sidebar_min_stored ) {
-        gtk_widget_set_size_request( sidebar, min_width, plugin->sidebar_min_height );
+    else if( klass->sidebar_original_min_width != UNKNOWN_SIZE ) {
+        gtk_widget_set_size_request( GTK_WIDGET( plugin->sidebar ),
+                                     klass->sidebar_original_min_width,
+                                     klass->sidebar_original_min_height );
     }
 }
 
@@ -233,57 +233,72 @@ static void
 apply_visual_style( SDPromptViewerPlugin *plugin,
                     SDPromptTheme         theme )
 {
-    GdkScreen *screen = gdk_screen_get_default();
+    SDPromptViewerPluginClass *klass  = SDPROMPT_VIEWER_PLUGIN_GET_CLASS( plugin );
+    GdkScreen                 *screen = gdk_screen_get_default();
     if( !screen ) { return; }
+    
+    // if the theme system was locked
+    // then do nothing and return
+    if( klass->is_theme_locked )
+    { return; }
+    
+    // if the input theme is the same than the current theme
+    // then do nothing and return
+    if( theme.visual_style == klass->current_theme.visual_style &&
+        theme.border_size  == klass->current_theme.border_size  &&
+        theme.font_size    == klass->current_theme.font_size     )
+    { return; }
 
-    eog_debug_message( DEBUG_PLUGINS, "## visual-style = %d", theme.visual_style );
-    eog_debug_message( DEBUG_PLUGINS, "## border-size  = %d", theme.border_size  );
-    eog_debug_message( DEBUG_PLUGINS, "## font-size    = %d", theme.font_size    );
+    /*
+    DEBUG_MESSAGE( "## visual-style = %d", theme.visual_style );
+    DEBUG_MESSAGE( "## border-size  = %d", theme.border_size  );
+    DEBUG_MESSAGE( "## font-size    = %d", theme.font_size    );
+    */
 
     /* remove previous visual styles */
-    if( plugin->visual_style_provider ) {
+    if( klass->visual_style_provider ) {
         gtk_style_context_remove_provider_for_screen(
-            screen, plugin->visual_style_provider);
-        g_object_unref( plugin->visual_style_provider );
-        plugin->visual_style_provider = NULL;
+            screen, klass->visual_style_provider);
+        g_object_unref( klass->visual_style_provider );
+        klass->visual_style_provider = NULL;
     }
-    if( plugin->border_style_provider ) {
+    if( klass->border_style_provider ) {
         gtk_style_context_remove_provider_for_screen(
-            screen, plugin->border_style_provider);
-        g_object_unref( plugin->border_style_provider );
-        plugin->border_style_provider = NULL;
+            screen, klass->border_style_provider);
+        g_object_unref( klass->border_style_provider );
+        klass->border_style_provider = NULL;
     }
-    if( plugin->zoom_style_provider ) {
+    if( klass->zoom_style_provider ) {
         gtk_style_context_remove_provider_for_screen(
-            screen, plugin->zoom_style_provider);
-        g_object_unref( plugin->zoom_style_provider );
-        plugin->zoom_style_provider = NULL;        
+            screen, klass->zoom_style_provider);
+        g_object_unref( klass->zoom_style_provider );
+        klass->zoom_style_provider = NULL;        
     }
     /* try to create the new style providers */
-    plugin->visual_style_provider = new_theme_style_provider(
+    klass->visual_style_provider = new_theme_style_provider(
                                         THEME_VISUAL_STYLE, theme.visual_style );
-    if( plugin->visual_style_provider==NULL ) { return; }
-    plugin->border_style_provider = new_theme_style_provider(
+    if( klass->visual_style_provider==NULL ) { return; }
+    klass->border_style_provider = new_theme_style_provider(
                                         THEME_BORDER_STYLE, theme.border_size );
-    plugin->zoom_style_provider   = new_theme_style_provider(
+    klass->zoom_style_provider   = new_theme_style_provider(
                                         THEME_ZOOM_STYLE, theme.font_size );
     
     /* add the new visual styles */
-    if( plugin->visual_style_provider ) {
+    if( klass->visual_style_provider ) {
         gtk_style_context_add_provider_for_screen(
-            screen, plugin->visual_style_provider,
+            screen, klass->visual_style_provider,
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
         );
     }
-    if( plugin->border_style_provider ) {
+    if( klass->border_style_provider ) {
         gtk_style_context_add_provider_for_screen(
-            screen, plugin->border_style_provider,
+            screen, klass->border_style_provider,
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
         );
     }
-    if( plugin->zoom_style_provider ) {
+    if( klass->zoom_style_provider ) {
         gtk_style_context_add_provider_for_screen(
-            screen, plugin->zoom_style_provider,
+            screen, klass->zoom_style_provider,
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
         );
     }
@@ -323,7 +338,7 @@ show_widget( GtkBuilder  *builder,
 static void
 show_spinner( SDPromptViewerPlugin *plugin )
 {
-    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkBuilder *builder = plugin->page_builder;
     if( !builder ) { return; }
     hide_all_widgets( builder );
     show_widget( builder, "loading_group", TRUE );
@@ -333,7 +348,7 @@ static void
 show_message( SDPromptViewerPlugin *plugin,
               const gchar          *message )
 {
-    GtkBuilder *builder = plugin->sidebar_builder;
+    GtkBuilder *builder = plugin->page_builder;
     if( !builder ) { return; }
     hide_all_widgets( builder );
     display_text( builder , "message_label", message );
@@ -345,12 +360,13 @@ show_image_generation_data( SDPromptViewerPlugin *plugin )
 {
     SDParameters parameters; const gchar *image_generation_data;
     GtkTextView *text_view; GtkTextBuffer *buffer; int i;
-    GtkBuilder *b = plugin->sidebar_builder;
+    GtkBuilder *b = plugin->page_builder;
     if( !b ) { return; }
         
     /* If no generation data is present, show a message and return */
     image_generation_data = get_image_generation_data( plugin );
-    if( is_empty(image_generation_data) ) {
+    if( IS_EMPTY_STR(image_generation_data) )
+    {
         show_message( plugin,
                       "No Stable Diffusion parameters found in the image." );
         return;
@@ -417,10 +433,8 @@ show_image_generation_data( SDPromptViewerPlugin *plugin )
     show_widget(b, "settings_group"  , parameters.settings.has_info     );
     
     if( plugin->force_visibility ) {
-        EogWindow *window  = plugin->window;
-        GtkWidget *sidebar = window ? eog_window_get_sidebar( window ) : NULL;
-        if( sidebar ) {
-            eog_sidebar_set_page( EOG_SIDEBAR(sidebar), plugin->gtkbuilder_widget );
+        if( plugin->sidebar ) {
+            eog_sidebar_set_page( plugin->sidebar, plugin->page );
         }
     }
 }
@@ -486,7 +500,7 @@ sdprompt_viewer_plugin_set_property( GObject       *object,
                                      const GValue  *value,
                                      GParamSpec    *pspec )
 {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN (object);
+    SDPromptViewerPlugin      *plugin = SDPROMPT_VIEWER_PLUGIN (object);
     switch (prop_id)
     {
         case PROP_WINDOW:
@@ -521,16 +535,11 @@ sdprompt_viewer_plugin_set_property( GObject       *object,
         case PROP_THEME_BORDER_SIZE:
             plugin->theme.border_size = g_value_get_int(value);
             apply_visual_style( plugin, plugin->theme );
-            eog_debug_message( DEBUG_PLUGINS, "## BORDER-SIZE = %d",
-                               g_value_get_int(value) );
             break;
             
         case PROP_THEME_FONT_SIZE:
             plugin->theme.font_size = g_value_get_int(value);
             apply_visual_style( plugin, plugin->theme );
-            
-            eog_debug_message( DEBUG_PLUGINS, "## FONT-SIZE = %d",
-                               g_value_get_int(value) );
             break;
                         
         default:
@@ -669,35 +678,38 @@ on_preferences_clicked( GtkWidget *widget, gpointer data ) {
 static void
 on_activate( EogWindowActivatable *activatable )
 {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( activatable );
-    EogWindow *window    = plugin ? plugin->window :  NULL;
-    GtkWidget *thumbview = window ? eog_window_get_thumb_view( window ) : NULL;
-    GtkWidget *sidebar   = window ? eog_window_get_sidebar( window ) :  NULL;
-    GSettings *settings  = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
-    GError* error = NULL;
+    SDPromptViewerPlugin      *plugin   = SDPROMPT_VIEWER_PLUGIN( activatable );
+    SDPromptViewerPluginClass *klass    = SDPROMPT_VIEWER_PLUGIN_GET_CLASS( plugin );
+    EogWindow                 *window   = plugin ? plugin->window :  NULL;
+    GSettings                 *settings = g_settings_new( SDPROMPT_VIEWER_GSCHEMA_ID );
+    GError                    *error    = NULL;
     
-    GtkWidget *button;
-    GtkBuilder *builder;
+    g_assert_nonnull( window );
+    g_assert_nonnull( settings );
     
-    plugin->thumbview = EOG_THUMB_VIEW( thumbview );
+    klass->instance_count++;
 
     /*-- build the user interface --*/
-    plugin->sidebar_builder = builder = gtk_builder_new();
-    gtk_builder_set_translation_domain( plugin->sidebar_builder,
+    plugin->page_builder = gtk_builder_new();
+    gtk_builder_set_translation_domain( plugin->page_builder,
                                         GETTEXT_PACKAGE );
-    if( !gtk_builder_add_from_resource( plugin->sidebar_builder,
+    if( !gtk_builder_add_from_resource( plugin->page_builder,
                                         RES_PLUGIN_UI,
                                         &error) ) {
         g_warning( "Couldn't load UI resource: %s", error->message );
         g_error_free( error );
     }
-    plugin->gtkbuilder_widget = get_widget( plugin->sidebar_builder, "viewport1" );
+    
+    plugin->thumbview = EOG_THUMB_VIEW( eog_window_get_thumb_view( window ) );
+    plugin->sidebar   = EOG_SIDEBAR( eog_window_get_sidebar( window ) );
+    plugin->page      = get_widget( plugin->page_builder, "viewport1" );
+
 
     /*-- add the user interface to the sidebar */
-    eog_sidebar_add_page( EOG_SIDEBAR( sidebar ),
+    eog_sidebar_add_page( plugin->sidebar,
                           _("Stable Diffusion Prompt Viewer"),
-                          plugin->gtkbuilder_widget );
-    gtk_widget_show_all( plugin->gtkbuilder_widget );
+                          plugin->page );
+    gtk_widget_show_all( plugin->page );
 
     /*-- binding configurable properties --*/
     g_settings_bind( settings, SETTINGS_SHOW_UNKNOWN_PARAMS,
@@ -717,21 +729,19 @@ on_activate( EogWindowActivatable *activatable )
     
     /*-- binding events using signals --*/
     plugin->thumbview_sel_changed_signal_id =
-        g_signal_connect( G_OBJECT( thumbview ),
+        g_signal_connect( G_OBJECT( plugin->thumbview ),
                           "selection-changed",
                           G_CALLBACK( on_image_changed ),
                           plugin );
 
-    button = get_widget( builder, "preferences_button" );
     plugin->preferences_button_signal_id =
-        g_signal_connect( G_OBJECT( button ),
+        g_signal_connect( get_widget( plugin->page_builder, "preferences_button" ),
                           "clicked",
                           G_CALLBACK( on_preferences_clicked ),
                           plugin );
         
-    button = get_widget( builder, "copy_button" );
     plugin->copy_button_signal_id =
-        g_signal_connect( G_OBJECT( button ),
+        g_signal_connect( get_widget( plugin->page_builder, "copy_button" ),
                           "clicked",
                           G_CALLBACK( on_copy_data_clicked ),
                           plugin );
@@ -747,34 +757,43 @@ on_activate( EogWindowActivatable *activatable )
 static void
 on_deactivate( EogWindowActivatable *activatable )
 {
-    SDPromptViewerPlugin *plugin = SDPROMPT_VIEWER_PLUGIN( activatable );
-    GtkWidget *sidebar, *thumbview;
-    GtkWidget *button;
-    GtkBuilder *builder = plugin->sidebar_builder;
+    SDPromptViewerPlugin      *plugin = SDPROMPT_VIEWER_PLUGIN( activatable );
+    SDPromptViewerPluginClass *klass  = SDPROMPT_VIEWER_PLUGIN_GET_CLASS( plugin );
     static const SDPromptTheme NULL_THEME = { -1, -1, -1 };
 
-    /*-- restore sidebar width, visual style & release stored data --*/
+    /*-- restore sidebar width and release image generation data --*/
     set_image_generation_data( plugin, NULL, 0 );
     apply_sidebar_minimum_width( plugin, -1 );
-    apply_visual_style( plugin, NULL_THEME );
 
     /*-- remove the user interface from the sidebar --*/
-    sidebar = eog_window_get_sidebar( plugin->window );
-    eog_sidebar_remove_page( EOG_SIDEBAR( sidebar ),
-                             plugin->gtkbuilder_widget );
+    eog_sidebar_remove_page( plugin->sidebar,
+                             plugin->page );
 
     /*-- remove signals --*/
-    thumbview = eog_window_get_thumb_view( plugin->window );
-    g_signal_handler_disconnect( thumbview, plugin->thumbview_sel_changed_signal_id );
-    button = get_widget( builder, "preferences_button" );
-    g_signal_handler_disconnect( button, plugin->preferences_button_signal_id );
-    button = get_widget( builder, "copy_button" );
-    g_signal_handler_disconnect( button, plugin->copy_button_signal_id );
+    g_signal_handler_disconnect( plugin->thumbview,
+                                 plugin->thumbview_sel_changed_signal_id );
+    g_signal_handler_disconnect( get_widget( plugin->page_builder, "preferences_button" ),
+                                 plugin->preferences_button_signal_id );
+    g_signal_handler_disconnect( get_widget( plugin->page_builder, "copy_button" ),
+                                 plugin->copy_button_signal_id );
     
-    if( plugin->sidebar_builder ) {
-        g_object_unref( plugin->sidebar_builder );
-        plugin->sidebar_builder = NULL;
+    if( plugin->page_builder ) {
+        g_object_unref( plugin->page_builder );
+        plugin->page_builder = NULL;
     }
+
+    /* if the current object is the last instance of the class        */
+    /* then it removes any visual styles applied to free up resources */
+    if( --klass->instance_count == 0 ) {
+        apply_visual_style( plugin, NULL_THEME );
+    }
+    
+    /* This line locks the visual styles system due to a bug that crashes */
+    /* the application if any window is closed and a style is applied.    */
+    /* The bug has not been fixed yet, so the visual styles system is     */
+    /* locked immediately after a window is closed to prevent the crash.  */
+    klass->is_theme_locked = TRUE;
+
 }
 
 static void
