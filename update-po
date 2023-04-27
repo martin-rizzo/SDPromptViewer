@@ -1,4 +1,15 @@
 #!/bin/bash
+#
+# To generate a .pot (translation template) file from POTFILES.in:
+# > xgettext --output=messages.pot --files-from=po/POTFILES.in
+#
+# To generate a .po (translation file) from the .pot template:
+# > msginit --input=po/messages.pot --output-file=po/es.po --locale=es
+#
+# To update an existing .po translation file from the .pot template:
+# > msgmerge --update po/es.po po/messages.pot
+#
+
 
 # TODO: move ./po -> ./languages
 PO_DIR=./po
