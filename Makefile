@@ -31,7 +31,8 @@
 #_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
 CC = gcc
-CFLAGS = -Wall -fPIC $(GLIB_CFLAGS) $(GTK_CFLAGS) $(LIBPEAS_CFLAGS) $(EOG_CFLAGS)
+CFLAGS = -fPIC $(EXTRA_CFLAGS) $(GLIB_CFLAGS) $(GTK_CFLAGS) $(LIBPEAS_CFLAGS) $(EOG_CFLAGS)
+EXTRA_CFLAGS = -Wall
 
 # Dependencies (GLIB,GTK,LIBPEAS-GTK,EOG)
 GLIB_CFLAGS    := $(shell pkg-config --cflags glib-2.0)
@@ -58,7 +59,11 @@ LIBRARY := lib$(PROJECT_NAME).so
 PLUGIN  := $(PROJECT_NAME).plugin
 GSCHEMA := org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
 
-SRCS = sdprompt-viewer-plugin.c sdprompt-viewer-preferences.c $(RESOURCES_C)
+# Source files to compile
+SRCS  = sdprompt-viewer-plugin.c
+SRCS += sdprompt-viewer-preferences.c
+SRCS += $(RESOURCES_C)
+
 OBJS = $(SRCS:.c=.o)
 
 

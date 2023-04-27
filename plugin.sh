@@ -30,13 +30,6 @@
 #     TORT OR OTHERWISE, ARISING FROM,OUT OF OR IN CONNECTION WITH THE
 #     SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-#
-#  plugin will be installed in:
-#    ~/.local/share/eog/plugins/sdprompt-viewer.plugin
-#    ~/.local/share/eog/plugins/libsdprompt-viewer.so
-#    ~/.local/share/glib-2.0/schemas/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
-#    (?) ~/.local/share/metainfo/eog-sdprompt-display.appdata.xml
-#
 SCRIPT_NAME=${BASH_SOURCE[0]##*/}
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SCRIPT_HELP="
@@ -59,7 +52,7 @@ Example:
 
 # IMPORTANT:
 #   Directory where test images are located. These images are used
-#   when running './make.sh run' to test the plugin functionality.
+#   when running './plugin.sh run' to test the plugin functionality.
 TEST_IMAGES_DIR="$HOME/Extra/Test"
 
 # Directory where the GSettings schemas are stored
@@ -73,46 +66,41 @@ SCRIPT_STATUS=0
 
 build() {
   echo "Executing build command..."
-  meson setup build && ninja -C build
-  SCRIPT_STATUS=$?
+  make
+  return $?
 }
 
 run() {
   echo "Executing run command..."
-  install
-  if [ $SCRIPT_STATUS -eq 0 ]; then
-    if [ -e "$TEST_IMAGES_DIR" ]; then
-      EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog "$TEST_IMAGES_DIR" & disown
-    else
-      EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog &disown
-    fi
+  make install || return 1
+  if [ -e "$TEST_IMAGES_DIR" ]; then
+    EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog "$TEST_IMAGES_DIR" & disown
+  else
+    EOG_DEBUG_PLUGINS='true' GOBJECT_DEBUG='instance-count' eog &disown
   fi
+  return 0
 }
 
 clean() {
   echo "Executing clean command..."
-  # check if the current directory is the source code directory
-  if [[ -f "$SCRIPT_NAME" ]]; then
-    rm -Rf 'build'
-    SCRIPT_STATUS=0
-  else 
-    echo "ERROR: can´t remote the build directory"
-    SCRIPT_STATUS=1
-  fi
+  make clean
+  return $?
 }
 
 install() {
   echo "Executing install command..."
-  meson setup build && ninja -C build install
-  SCRIPT_STATUS=$?
+  make install
+  return $?
 }
 
 remove() {
   echo "Executing remove command..."
-  rm "$HOME/.local/share/eog/plugins/libsdprompt-viewer.so"
-  rm "$HOME/.local/share/eog/plugins/sdprompt-viewer.plugin"
-  rm "$GIO_SCHEMAS_DIR/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml"
-  glib-compile-schemas "$GIO_SCHEMAS_DIR"
+  make remove
+  #rm "$HOME/.local/share/eog/plugins/libsdprompt-viewer.so"
+  #rm "$HOME/.local/share/eog/plugins/sdprompt-viewer.plugin"
+  #rm "$GIO_SCHEMAS_DIR/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml"
+  #glib-compile-schemas "$GIO_SCHEMAS_DIR"
+  return $?
 }
 
 release() {
@@ -125,7 +113,7 @@ release() {
   ## set the RELEASE_VERSION environment variable to the latest tag
   ## export RELEASE_VERSION=$latest_tag
   ## meson build && ninja -C build
-  SCRIPT_STATUS=$?
+  return 1
 }
 
 #================================== START ==================================#
@@ -140,24 +128,31 @@ fi
 cd "$SCRIPT_DIR"
 
 # execute the appropriate function based on the first argument
+SCRIPT_STATUS=0
 case "$1" in
   build)
     build
+    SCRIPT_STATUS=$?
     ;;
   run)
     run
+    SCRIPT_STATUS=$?
     ;;
   clean)
     clean
+    SCRIPT_STATUS=$?
     ;;
   install)
     install
+    SCRIPT_STATUS=$?
     ;;
   remove)
     remove
+    SCRIPT_STATUS=$?
     ;;
   release)
     release
+    SCRIPT_STATUS=$?
     ;;
   *)
     echo "Invalid command: $1"

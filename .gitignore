@@ -3,9 +3,20 @@
 # Hidden Directories #
 /.*/
 
-# Backup files (Glade y msgmerge)
+# Backup Files (glade, msgmerge, ...) #
 *~
-*#
+~*
+
+# Generated Files #
+/config.h
+/libsdprompt-viewer.so
+/org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
+/sdprompt-viewer-plugin.o
+/sdprompt-viewer-preferences.o
+/sdprompt-viewer-resources.c
+/sdprompt-viewer-resources.o
+/sdprompt-viewer.plugin
+
 
 # Kate Swap Files #
 .*.kate-swp
