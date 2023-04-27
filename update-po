@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# TODO: move ./po -> ./languages
+PO_DIR=./po
+PLUGIN_INPUT=system/sdprompt-viewer.plugin.desktop.in
+COMMAND="$1"
+LOCALE="$2"
+
+xgettext --language=Desktop --keyword=Description --output="$PO_DIR/messages.pot" "$PLUGIN_INPUT"
+xgettext -join-existing --keyword=_ --output="$PO_DIR/messages.pot" --files-from="$PO_DIR/POTFILES.in"
+
+if [[ $COMMAND == 'create' ]]; then
+    [[ -z "$LOCALE" ]] && echo "locale missing" && exit 1
+    msginit --input="$PO_DIR/messages.pot" --output-file="$PO_DIR/$LOCALE.po" --locale=$LOCALE
+else
+    for file in "$PO_DIR"/*.po; do
+      msgmerge --update "$file" "$PO_DIR/messages.pot"
+    done
+fi
+
+rm "$PO_DIR/messages.pot"
+

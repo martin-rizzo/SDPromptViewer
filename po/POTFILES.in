@@ -1,0 +1,6 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+sdprompt-viewer-plugin.c
+sdprompt-viewer-plugin.ui
+sdprompt-viewer-preferences.c
+sdprompt-viewer-preferences.ui

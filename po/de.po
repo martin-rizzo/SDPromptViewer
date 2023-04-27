@@ -1,0 +1,180 @@
+# German translations for PACKAGE package.
+# Copyright (C) 2023 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Martin <martinrizzo@gmail.com>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-04-26 22:27-0300\n"
+"PO-Revision-Date: 2023-04-26 22:27-0300\n"
+"Last-Translator: Martin <martinrizzo@gmail.com>\n"
+"Language-Team: German\n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: system/sdprompt-viewer.plugin.desktop.in:5 sdprompt-viewer-plugin.c:710
+msgid "Stable Diffusion Prompt Viewer"
+msgstr ""
+
+#: system/sdprompt-viewer.plugin.desktop.in:7
+msgid "Displays text prompts that are embedded within Stable Diffusion images."
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:36
+msgid "Copy Image Generation Data"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:61
+msgid "Preferences"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:87
+msgid "< No prompt information >"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:186
+msgid "Model"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:251
+msgid "Prompt"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:301
+msgid "Negative prompt"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:344
+msgid "Wildcard prompt"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:392
+msgid "Sampler:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:416
+msgid "Steps:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:469
+msgid "CFG Scale:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:495
+msgid "Width:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:548
+msgid "Seed:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:574
+msgid "Height:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:613
+msgid "Parameters"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:652
+msgid "Upscaler:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:675
+msgid "Hires Steps:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:729 sdprompt-viewer-plugin.ui:900
+msgid "Denoising Str:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:754
+msgid "Resized Width:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:806
+msgid "Upscale By:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:832
+msgid "Resized Height:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:868
+msgid "Highres fix"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:926
+msgid "Mask blur:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:978
+msgid "Inpainting"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:1014
+msgid "Eta:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:1051
+msgid "ENSD:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:1089
+msgid "Clip skip:"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:1123
+msgid "Override settings"
+msgstr ""
+
+#: sdprompt-viewer-plugin.ui:1179
+msgid "Unknown parameters"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:89
+msgid "Force minimum width:"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:142
+msgid "Force visibility of this plugin"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:146
+msgid ""
+"When this option is enabled, this plugin will be shown in the sidebar when "
+"EOG is started."
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:163
+msgid "Sidebar Control"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:209
+msgid "None"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:210
+msgid "Autumn Twilight"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:211
+msgid "Frosty Dawn"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:228
+msgid "Border:"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:256
+msgid "Zoom:"
+msgstr ""
+
+#: sdprompt-viewer-preferences.ui:294
+msgid "Visual Style"
+msgstr ""
