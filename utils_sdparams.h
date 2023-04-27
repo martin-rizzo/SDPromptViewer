@@ -404,15 +404,15 @@ parse_sd_params_final_fix(SDParameters *sd_parameters)
     
     /* 3) calculate hires width, height & upscale fields */
     width = sd_parameters->width ?
-        strtof( sd_parameters->width, &endptr ) : 0;
+        (float)strtod( sd_parameters->width, &endptr ) : 0;
     height = sd_parameters->height ?
-        strtof( sd_parameters->height, &endptr ): 0;
+        (float)strtod( sd_parameters->height, &endptr ): 0;
     hr_width = sd_parameters->hires.width ?
-        strtof( sd_parameters->hires.width, &endptr ) : 0;
+        (float)strtod( sd_parameters->hires.width, &endptr ) : 0;
     hr_height = sd_parameters->hires.height ?
-        strtof( sd_parameters->hires.height, &endptr ) : 0;
+        (float)strtod( sd_parameters->hires.height, &endptr ) : 0;
     hr_upscale = sd_parameters->hires.upscale ?
-        strtof( sd_parameters->hires.upscale,  &endptr ) : 0;
+        (float)strtod( sd_parameters->hires.upscale,  &endptr ) : 0;
         
     if( hr_width  == 0.0f ) {
         sd_parameters->hires.calc_width = width  * hr_upscale;

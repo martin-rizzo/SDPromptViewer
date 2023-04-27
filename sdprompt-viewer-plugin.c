@@ -205,7 +205,7 @@ apply_sidebar_minimum_width( SDPromptViewerPlugin *plugin,
                                      &klass->sidebar_original_min_width,
                                      &klass->sidebar_original_min_height );
     }
-    // set the minimum size
+    /* set the minimum size */
     if( min_width >= 0 ) {
         gtk_widget_set_size_request( GTK_WIDGET( plugin->sidebar ),
                                      min_width,
@@ -237,13 +237,13 @@ apply_visual_style( SDPromptViewerPlugin *plugin,
     GdkScreen                 *screen = gdk_screen_get_default();
     if( !screen ) { return; }
     
-    // if the theme system was locked
-    // then do nothing and return
+    /* if the theme system was locked */
+    /* then do nothing and return     */
     if( klass->is_theme_locked )
     { return; }
     
-    // if the input theme is the same than the current theme
-    // then do nothing and return
+    /* if the input theme is the same than the current theme */
+    /* then do nothing and return                            */
     if( theme.visual_style == klass->current_theme.visual_style &&
         theme.border_size  == klass->current_theme.border_size  &&
         theme.font_size    == klass->current_theme.font_size     )
