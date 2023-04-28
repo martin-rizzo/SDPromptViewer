@@ -48,6 +48,7 @@ PO_DIR          := po
 
 # Define variables
 PROJECT_NAME := sdprompt-viewer
+GSCHEMA_NAME := org.gnome.eog.plugins.$(PROJECT_NAME)
 GETTEXT_PACKAGE := $(shell echo $(PROJECT_NAME) | tr '[:lower:]' '[:upper:]')
 
 GSCHEMA_INPUT := system/sdprompt-viewer.gschema.xml.in
@@ -57,7 +58,7 @@ RESOURCES_C   := $(PROJECT_NAME)-resources.c
 
 LIBRARY := lib$(PROJECT_NAME).so
 PLUGIN  := $(PROJECT_NAME).plugin
-GSCHEMA := org.gnome.eog.plugins.sdprompt-viewer.gschema.xml
+GSCHEMA := $(GSCHEMA_NAME).gschema.xml
 
 # Source files to compile
 SRCS  = sdprompt-viewer-plugin.c
