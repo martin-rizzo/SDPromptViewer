@@ -21,6 +21,8 @@ This is a plugin for Eye of Gnome (EoG) that allows you to view prompts and gene
 
 To install the plugin from source code the necessary tools and dependencies such as GTK and EoG development components are required.
 
+    sudo apt install -y pkgconf build-essential libglib2.0-dev libgtk-3-dev libpeas-dev eog-dev gettext
+
 Once the dependencies are installed, the plugin can be easily compiled and installed using the `plugin.sh` script.
 
 To compile and install the plugin, use the following command in the terminal:
